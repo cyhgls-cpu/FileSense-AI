@@ -68,7 +68,7 @@
 
 ### 下载安装
 
-1. 前往 [Releases](https://github.com/yourusername/filesense-ai/releases) 页面
+1. 前往 [Releases](https://github.com/cyhgls-cpu/FileSense-AI/releases) 页面
 2. 下载对应系统的安装包
 3. 安装并运行
 
@@ -76,8 +76,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/filesense-ai.git
-cd filesense-ai
+git clone https://github.com/cyhgls-cpu/FileSense-AI.git
+cd FileSense-AI
 
 # 安装依赖
 npm install
@@ -180,8 +180,8 @@ npm run build
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/filesense-ai.git
-cd filesense-ai
+git clone https://github.com/cyhgls-cpu/FileSense-AI.git
+cd FileSense-AI
 
 # 安装项目依赖
 npm install
