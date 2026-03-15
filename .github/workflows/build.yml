@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -16,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -28,7 +31,7 @@ jobs:
       - name: Build Windows
         run: |
           npx electron-builder install-app-deps
-          npx electron-builder --win portable --x64
+          npx electron-builder --win portable --x64 --publish=never
         env:
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
 
@@ -49,7 +52,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -61,7 +64,7 @@ jobs:
       - name: Build macOS
         run: |
           npx electron-builder install-app-deps
-          npx electron-builder --mac zip --x64
+          npx electron-builder --mac zip --x64 --publish=never
         env:
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
 
@@ -82,7 +85,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -97,7 +100,7 @@ jobs:
       - name: Build Linux
         run: |
           npx electron-builder install-app-deps
-          npx electron-builder --linux AppImage --x64
+          npx electron-builder --linux AppImage --x64 --publish=never
         env:
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
 
