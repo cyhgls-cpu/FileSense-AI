@@ -1,0 +1,32 @@
+[package]
+name = "file_scanner"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2.14", features = ["napi9"] }
+napi-derive = "2.14"
+jwalk = "0.8"
+rayon = "1.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+walkdir = "2.4"
+crossbeam-channel = "0.5"
+memmap2 = "0.9"
+blake3 = "1.5"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winbase", "fileapi", "handleapi", "winnt"] }
+
+[build-dependencies]
+napi-build = "2.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+panic = "abort"

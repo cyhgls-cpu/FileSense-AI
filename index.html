@@ -1,0 +1,4026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FileSense AI (灵析)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* 马卡龙色系 */
+      --pink: #FFB7C5;
+      --mint: #AAF0D1;
+      --lavender: #E6E6FA;
+      --peach: #FFDAB9;
+      --sky: #B0E0E6;
+      --lemon: #FFFACD;
+      --text: #4A4A4A;
+      --white: #FFFFFF;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, var(--pink) 0%, var(--lavender) 50%, var(--mint) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden; /* 防止横向滚动 */
+    }
+
+    .container {
+      max-width: 100%; /* 允许占满整个窗口 */
+      width: calc(100% - 40px); /* 留出边距 */
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 2.5em;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1.1em;
+      color: #888;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); /* 自适应列数 */
+      gap: 20px;
+      margin-bottom: 20px;
+      min-width: 0; /* 允许缩小 */
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card-title {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--pink), var(--peach));
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      color: var(--text);
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--mint), var(--sky));
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #FFB6C1, #FF6961);
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--lavender);
+      border-radius: 10px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--pink);
+    }
+
+    .path-display {
+      background: var(--lavender);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      word-break: break-all;
+      font-family: 'Consolas', monospace;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .stat-item {
+      background: linear-gradient(135deg, var(--peach), var(--lemon));
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-height: calc(100vh - 400px);
+      min-height: 300px;
+      overflow-y: auto;
+      margin-top: 15px;
+      /* 美化滚动条 */
+      scrollbar-width: thin;
+      scrollbar-color: var(--pink) var(--lavender);
+    }
+
+    /* 重复文件列表 - 基础样式，列数由JS控制 */
+    #duplicateList.file-list {
+      display: grid;
+      grid-template-columns: 1fr; /* 默认单列 */
+      gap: 20px;
+      align-items: start; /* 使用start让每项独立高度 */
+      height: auto;
+      max-height: calc(100vh - 300px); /* 限制最大高度 */
+      overflow-y: auto; /* 允许滚动 */
+    }
+
+    /* 多列模式下的样式 */
+    #duplicateList.file-list[style*="repeat(2"],
+    #duplicateList.file-list[style*="repeat(3"],
+    #duplicateList.file-list[style*="repeat(4"] {
+      align-items: start;
+    }
+
+    /* 虚拟滚动模式下的样式 */
+    #duplicateList.virtual-scroll-container {
+      height: calc(100vh - 400px);
+      max-height: calc(100vh - 400px);
+      overflow-y: auto;
+    }
+
+    /* 多列网格模式下的行样式 */
+    .duplicate-grid-row {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+    }
+
+    /* 确保网格中的重复组高度自适应 */
+    .duplicate-grid-row .duplicate-group {
+      height: auto;
+      min-height: auto;
+    }
+    
+    /* Webkit 浏览器滚动条样式 */
+    .file-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .file-list::-webkit-scrollbar-track {
+      background: var(--lavender);
+      border-radius: 10px;
+    }
+    
+    .file-list::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--pink), var(--peach));
+      border-radius: 10px;
+    }
+    
+    .file-list::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, var(--peach), var(--pink));
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--lavender);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .file-item:hover {
+      background: var(--pink);
+      transform: translateX(5px);
+    }
+
+    .file-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .file-meta {
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+
+    .badge-software { background: var(--sky); }
+    .badge-font { background: var(--mint); }
+    .badge-image { background: var(--peach); }
+    .badge-music { background: var(--lemon); }
+    .badge-video { background: var(--pink); }
+    .badge-other { background: var(--lavender); }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--lavender);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 15px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--mint), var(--sky));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .settings-panel {
+      grid-column: 1 / -1;
+    }
+
+    .ai-provider-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .provider-card {
+      background: var(--lavender);
+      padding: 15px;
+      border-radius: 15px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .provider-card.selected {
+      border-color: var(--pink);
+      background: var(--pink);
+    }
+
+    .provider-card:hover {
+      transform: scale(1.02);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 25px;
+      background: var(--lavender);
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1em;
+    }
+
+    .tab.active {
+      background: var(--pink);
+      font-weight: bold;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--lavender);
+      border-top-color: var(--pink);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--white);
+      padding: 15px 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .duplicate-group {
+      background: var(--lemon);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+      height: auto; /* 高度自适应 */
+      min-height: 350px; /* 最小高度 */
+      overflow: hidden; /* 防止内容溢出 */
+    }
+
+    .duplicate-group:hover {
+      border-color: var(--pink);
+      transform: translateY(-2px); /* 改为上浮效果 */
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .duplicate-group.selected {
+      border-color: var(--mint);
+      background: linear-gradient(135deg, var(--lemon), var(--mint));
+    }
+
+    .duplicate-header {
+      font-weight: bold;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 2px dashed rgba(0,0,0,0.1);
+    }
+
+    .duplicate-compare {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 15px;
+      align-items: stretch;
+      margin-bottom: 15px;
+      min-width: 0;
+      width: 100%;
+    }
+
+    /* 小屏幕时卡片内部改为纵向布局 */
+    @media (max-width: 800px) {
+      .duplicate-compare {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .compare-arrow {
+        transform: rotate(90deg);
+        padding: 5px 0;
+      }
+
+      .file-compare-card {
+        padding: 10px;
+      }
+
+      .file-preview {
+        height: 120px;
+      }
+    }
+
+    .file-compare-card {
+      background: var(--white);
+      padding: 12px; /* 稍微减小内边距 */
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    /* 确保箭头在中间 */
+    .compare-arrow {
+      font-size: 1.5em;
+      color: var(--text);
+      text-align: center;
+      align-self: center;
+      padding: 0 5px;
+    }
+
+    .file-compare-card.original {
+      border-left: 4px solid var(--mint);
+    }
+
+    .file-compare-card.duplicate {
+      border-left: 4px solid var(--pink);
+    }
+
+    .file-compare-card.keep.selected {
+      border: 2px solid var(--mint);
+      background: linear-gradient(135deg, var(--white), var(--mint));
+    }
+
+    .file-compare-card.delete.selected {
+      border: 2px solid #FF6961;
+      background: linear-gradient(135deg, var(--white), #FFE4E1);
+    }
+
+    .file-preview {
+      width: 100%;
+      height: 150px;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0; /* 预览区域不缩小 */
+    }
+
+    .file-preview img,
+    .file-preview video {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .file-preview img:hover {
+      transform: scale(1.05);
+    }
+
+    .duplicate-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .action-left {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .action-right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* 小屏幕时操作按钮全宽显示 */
+    @media (max-width: 800px) {
+      .duplicate-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .action-left,
+      .action-right {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .action-right .btn-sm {
+        flex: 1;
+        min-width: 80px;
+      }
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.85em;
+    }
+
+    .radio-wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .radio-wrapper:hover {
+      background: rgba(0,0,0,0.1);
+    }
+
+    .radio-wrapper input[type="radio"] {
+      cursor: pointer;
+    }
+
+    /* 分类规则卡片样式 */
+    .radio-card {
+      display: block;
+      padding: 15px;
+      background: rgba(255,255,255,0.7);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .radio-card:hover {
+      background: rgba(255,255,255,0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .radio-card input[type="radio"]:checked + .radio-card-content {
+      color: #4A4A4A;
+    }
+
+    .radio-card:has(input[type="radio"]:checked) {
+      border-color: var(--pink);
+      background: rgba(255,183,197,0.1);
+    }
+
+    .radio-card-content {
+      display: block;
+    }
+
+
+    .compare-arrow {
+      font-size: 1.5em;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .file-compare-name {
+      font-weight: bold;
+      margin-bottom: 8px;
+      word-break: break-all;
+      font-size: 0.95em;
+    }
+
+    .file-compare-path {
+      font-size: 0.75em; /* 稍微缩小字体 */
+      color: #666;
+      margin-bottom: 5px;
+      word-break: break-all;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.3;
+      max-width: 100%;
+      background: rgba(0,0,0,0.03);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      display: block;
+      /* 关键：限制最大长度 */
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .file-compare-meta {
+      font-size: 0.85em;
+      color: #888;
+      margin-top: auto; /* 推到底部 */
+      padding-top: 10px;
+    }
+
+    .file-compare-meta div {
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .batch-actions {
+      position: sticky;
+      bottom: 0;
+      background: rgba(255,255,255,0.95);
+      padding: 15px 25px;
+      border-radius: 15px;
+      margin-top: 20px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+
+    .batch-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .selected-count {
+      background: var(--pink);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--mint);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-select-all {
+      background: linear-gradient(135deg, var(--lavender), var(--sky));
+    }
+
+    .confirm-dialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .confirm-box {
+      background: var(--white);
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .confirm-title {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: var(--text);
+    }
+
+    .confirm-message {
+      color: #666;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .confirm-files-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--lavender);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+    }
+
+    .confirm-files-list div {
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-cancel {
+      background: linear-gradient(135deg, var(--lavender), var(--peach));
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--lavender);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--pink);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--peach);
+    }
+
+    /* AI 设置面板样式 */
+    .hardware-info {
+      background: var(--lavender);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 25px;
+    }
+
+    .hardware-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .hardware-item:last-child {
+      border-bottom: none;
+    }
+
+    .hardware-label {
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .hardware-value {
+      color: #666;
+    }
+
+    .mode-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .mode-card {
+      background: var(--white);
+      padding: 25px;
+      border-radius: 15px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .mode-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .mode-card.selected {
+      border-color: var(--pink);
+      background: linear-gradient(135deg, var(--white), var(--pink));
+    }
+
+    .mode-icon {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    .mode-card h4 {
+      margin-bottom: 15px;
+      color: var(--text);
+    }
+
+    .mode-features {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 15px;
+      font-size: 0.9em;
+    }
+
+    .mode-features li {
+      padding: 5px 0;
+    }
+
+    .mode-specs {
+      display: flex;
+      gap: 10px;
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    .spec-memory {
+      background: var(--sky);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .spec-speed {
+      background: var(--mint);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .mode-badge {
+      position: absolute;
+      top: -10px;
+      right: 20px;
+      background: var(--mint);
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-size: 0.85em;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .model-list {
+      background: var(--lavender);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .model-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--white);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .model-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .model-size {
+      background: var(--peach);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.85em;
+    }
+
+    .model-status {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .status-text {
+      color: #888;
+      font-size: 0.9em;
+    }
+
+    .btn-sm {
+      padding: 6px 15px;
+      border-radius: 15px;
+      border: none;
+      background: linear-gradient(135deg, var(--pink), var(--peach));
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s ease;
+    }
+
+    .btn-sm:hover {
+      transform: scale(1.05);
+    }
+
+    /* 扫描控制按钮样式 */
+    .scan-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .btn.paused {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+    }
+
+    .btn.paused:hover {
+      transform: scale(1.05);
+    }
+
+    .option-group {
+      margin-bottom: 15px;
+    }
+
+    /* 下载进度样式 */
+    .download-progress {
+      background: linear-gradient(135deg, var(--lavender), var(--sky));
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 20px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .progress-title {
+      font-weight: bold;
+      color: var(--text);
+      font-size: 1.1em;
+    }
+
+    .btn-cancel-download {
+      padding: 6px 15px;
+      border-radius: 15px;
+      border: none;
+      background: linear-gradient(135deg, #FFB6C1, #FF6961);
+      color: white;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s ease;
+    }
+
+    .btn-cancel-download:hover {
+      transform: scale(1.05);
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 25px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--mint), var(--sky));
+      transition: width 0.3s ease;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+      );
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .progress-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .model-item.installed {
+      background: linear-gradient(135deg, var(--white), var(--mint));
+      border-left: 4px solid var(--mint);
+    }
+
+    .model-item.loaded {
+      background: linear-gradient(135deg, var(--white), var(--pink));
+      border-left: 4px solid var(--pink);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    .status-badge.installed {
+      background: var(--mint);
+      color: var(--text);
+    }
+
+    .status-badge.loaded {
+      background: var(--pink);
+      color: var(--text);
+    }
+
+    /* ========== 响应式布局 ========== */
+    @media (min-width: 1600px) {
+      .file-list {
+        grid-template-columns: repeat(auto-fill, minmax(650px, 1fr));
+      }
+    }
+
+    @media (min-width: 2000px) {
+      .file-list {
+        grid-template-columns: repeat(auto-fill, minmax(700px, 1fr));
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .file-list {
+        grid-template-columns: 1fr;
+      }
+      
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .duplicate-compare {
+        gap: 10px;
+      }
+      
+      .file-compare-card {
+        padding: 10px;
+      }
+    }
+  </style>
+  <!-- 虚拟滚动组件 -->
+  <script src="src/virtual-scroller.js"></script>
+  <style>
+    /* 虚拟滚动容器样式 */
+    .virtual-scroll-container {
+      height: 600px;
+      position: relative;
+    }
+
+    .virtual-scroll-viewport,
+    .dynamic-virtual-scroll-viewport {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .virtual-scroll-content,
+    .dynamic-virtual-scroll-content {
+      position: relative;
+    }
+
+    /* 骨架屏动画 */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--lavender) 25%, var(--pink) 50%, var(--lavender) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+      height: 100%;
+    }
+
+    /* 渐进式加载指示器 */
+    .progressive-loading {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      max-width: 300px;
+    }
+
+    .loading-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+    }
+
+    .loading-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--mint);
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .loading-item.ai-processing .pulse-dot {
+      background: var(--pink);
+      animation-delay: 0.3s;
+    }
+
+    .loading-item.complete {
+      opacity: 0.6;
+    }
+
+    .loading-item.complete .pulse-dot {
+      background: var(--sky);
+      animation: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <img src="assets/logo.svg" alt="FileSense AI" style="width: 36px; height: 36px;">
+        <div>
+          <h1 style="margin: 0; font-size: 1.3em;">FileSense AI (灵析)</h1>
+          <p class="subtitle" style="font-size: 0.75em; margin: 2px 0 0 0;">AI 驱动的本地重复文件检测与智能分类工具</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="scan">扫描文件</button>
+      <button class="tab" data-tab="duplicates">重复文件</button>
+      <button class="tab" data-tab="classify">AI 分类</button>
+      <button class="tab" data-tab="settings">设置</button>
+    </div>
+
+    <!-- 扫描文件 -->
+    <div id="scan-tab" class="tab-content active">
+      <div class="main-content">
+        <div class="card">
+          <h2 class="card-title">📂 选择扫描目录</h2>
+          <button class="btn" onclick="selectDirectory()">选择文件夹</button>
+          <div class="path-display" id="selectedPath">未选择目录</div>
+          
+          <div style="margin: 15px 0;">
+            <label style="display: inline-flex; align-items: center; gap: 8px; margin-right: 20px;">
+              <input type="checkbox" id="scanSoftware" checked> 💿 软件
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 8px; margin-right: 20px;">
+              <input type="checkbox" id="scanImages" checked> 🖼️ 图片
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 8px; margin-right: 20px;">
+              <input type="checkbox" id="scanDocuments" checked> 📄 文档
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="btn btn-primary" onclick="startScan()" id="scanBtn" disabled>开始扫描</button>
+            <button class="btn" onclick="pauseScan()" id="pauseBtn" disabled style="display: none;">⏸️ 暂停</button>
+            <button class="btn btn-danger" onclick="cancelScan()" id="cancelBtn" disabled style="display: none;">⏹️ 终止</button>
+          </div>
+          
+          <div class="progress-bar" id="scanProgress" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div id="scanStatus" style="margin-top: 10px; color: #666; font-size: 0.9em;"></div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">📊 扫描统计</h2>
+          <div class="stats" id="scanStats">
+            <div class="stat-item">
+              <div class="stat-number" id="totalFiles">0</div>
+              <div class="stat-label">总文件数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="softwareCount">0</div>
+              <div class="stat-label">软件</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="imageCount">0</div>
+              <div class="stat-label">图片</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="documentCount">0</div>
+              <div class="stat-label">文档</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="duplicateCount">0</div>
+              <div class="stat-label">重复文件</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="spaceSaved">0 MB</div>
+              <div class="stat-label">可节省空间</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📄 文件列表</h2>
+        <div class="file-list" id="fileList">
+          <p style="text-align: center; color: #999; padding: 40px;">请先选择要扫描的目录</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重复文件 -->
+    <div id="duplicates-tab" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">🔄 重复文件列表</h2>
+
+        <!-- AI智能比对选项 -->
+        <div style="background: var(--lavender); padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+          <strong style="font-size: 0.95em;">🤖 AI 智能比对（去重增强）：</strong>
+          <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">
+            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;" title="检测视觉上相似的图片，如缩放、裁剪、滤镜后的同一张图">
+              <input type="checkbox" id="usePerceptualHash"> 🖼️ 图片感知相似
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;" title="检测内容相似但文字表述不同的文档">
+              <input type="checkbox" id="useSemanticHash"> 📄 文档语义相似
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;" title="综合使用多种 AI 技术进行深度内容比对">
+              <input type="checkbox" id="useAICompare"> 🧠 深度内容比对
+            </label>
+          </div>
+          <div style="margin-top: 8px; font-size: 0.85em; color: #666;">
+            💡 使用 AI 功能需要先下载模型，请到"设置"标签页管理
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+          <button class="btn btn-primary" onclick="findDuplicates()" id="findDupBtn">查找重复文件</button>
+          <button class="btn" onclick="pauseFindDuplicates()" id="pauseDupBtn" style="display: none;">⏸️ 暂停</button>
+          <button class="btn btn-danger" onclick="cancelFindDuplicates()" id="cancelDupBtn" style="display: none;">⏹️ 终止</button>
+          <button class="btn btn-select-all" onclick="toggleSelectAll()" id="selectAllBtn" disabled>全选</button>
+          <button class="btn btn-danger" onclick="showDeleteConfirm()" id="deleteSelectedBtn" disabled>删除选中 (<span id="selectedCount">0</span>)</button>
+        </div>
+
+        <!-- 查找进度条 -->
+        <div id="findProgressContainer" style="display: none; margin-bottom: 15px; background: var(--lavender); padding: 12px; border-radius: 10px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span id="findProgressText" style="font-size: 0.9em; color: #555;">准备中...</span>
+            <span id="findProgressPercent" style="font-size: 0.9em; font-weight: bold; color: var(--pink);">0%</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+            <div id="findProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--pink), var(--purple)); transition: width 0.3s ease;"></div>
+          </div>
+          <div style="margin-top: 8px; font-size: 0.85em; color: #888; text-align: center;">
+            <span id="findProgressDetail">0 / 0</span>
+          </div>
+        </div>
+        <div class="file-list" id="duplicateList">
+          <p style="text-align: center; color: #999; padding: 40px;">点击"查找重复文件"开始检测</p>
+        </div>
+        
+        <div class="batch-actions" id="batchActions" style="display: none;">
+          <div class="batch-info">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="custom-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+              <span>全选所有重复项</span>
+            </label>
+            <span class="selected-count">已选择 <span id="currentSelected">0</span> 个文件</span>
+          </div>
+          <div class="action-buttons">
+            <button class="btn" onclick="cancelSelection()">取消选择</button>
+            <button class="btn btn-danger" onclick="showDeleteConfirm()">确认删除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 分类 -->
+    <div id="classify-tab" class="tab-content">
+      <div class="main-content">
+        <div class="card">
+          <h2 class="card-title">🤖 本地 AI 智能分类</h2>
+          <p style="color: #666; margin-bottom: 15px;">使用本地 LLM 模型进行智能分类，无需联网，保护隐私</p>
+          
+          <!-- 分类规则选择 -->
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">📋 请选择分类规则：</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+              <!-- 按文件类型分类 -->
+              <label class="radio-card" style="cursor: pointer;">
+                <input type="radio" name="classifyRule" value="filetype" checked onchange="updateClassifyOptions()">
+                <div class="radio-card-content">
+                  <div style="font-weight: bold; color: #4A4A4A;">📁 按文件类型分类</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    根据扩展名自动归类到软件、图片、音乐、电影、文档等文件夹
+                  </div>
+                </div>
+              </label>
+              
+              <!-- 按时间分类 -->
+              <label class="radio-card" style="cursor: pointer;">
+                <input type="radio" name="classifyRule" value="time" onchange="updateClassifyOptions()">
+                <div class="radio-card-content">
+                  <div style="font-weight: bold; color: #4A4A4A;">📅 按时间分类</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    按年/月或创建日期分组，适合整理照片、文档等时间敏感文件
+                  </div>
+                </div>
+              </label>
+              
+              <!-- AI 智能建议 -->
+              <label class="radio-card" style="cursor: pointer;">
+                <input type="radio" name="classifyRule" value="ai" onchange="updateClassifyOptions()">
+                <div class="radio-card-content">
+                  <div style="font-weight: bold; color: #4A4A4A;">🧠 AI 智能建议</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    使用本地 LLM 分析文件名和内容，智能推荐文件夹命名（需要下载模型）
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 按时间分类的选项 -->
+          <div id="timeClassifyOptions" style="display: none; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 10px;">
+            <h4 style="margin-bottom: 10px; font-size: 13px;">⏰ 时间分组方式：</h4>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              <label class="radio-wrapper">
+                <input type="radio" name="timeGrouping" value="year-month" checked>
+                <span>按年月（2024-01）</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" name="timeGrouping" value="year">
+                <span>按年份（2024）</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" name="timeGrouping" value="created-date">
+                <span>按创建日期（精确到天）</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- AI 分类的选项 -->
+          <div id="aiClassifyOptions" style="display: none; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 10px;">
+            <h4 style="margin-bottom: 10px; font-size: 13px;">🎯 AI 命名规则：</h4>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              <label class="radio-wrapper">
+                <input type="radio" name="aiNaming" value="descriptive" checked>
+                <span>描述性命名（如：工作文档、个人照片）</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" name="aiNaming" value="project-based">
+                <span>项目导向（如：Project-A、Project-B）</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" name="aiNaming" value="custom-pattern">
+                <span>自定义模式</span>
+              </label>
+            </div>
+            <div id="customPatternInput" style="display: none; margin-top: 10px;">
+              <input type="text" placeholder="输入自定义命名模式，如：{类别}_{日期}" 
+                     style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;" id="customPattern">
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="useLocalLLM" checked disabled>
+              <span>启用本地 LLM 分类</span>
+            </label>
+            <span class="badge badge-software" id="classifyLlmStatus">就绪</span>
+          </div>
+          <button class="btn btn-primary" onclick="startClassification()" id="classifyBtn">开始智能分类</button>
+        </div>
+
+        <!-- AI 智能搜索卡片 -->
+        <div class="card">
+          <h2 class="card-title">🔍 AI 智能搜索</h2>
+          <p style="color: #666; margin-bottom: 15px;">使用自然语言描述来搜索文件，支持跨模态理解（用文字描述搜图片）</p>
+
+          <div style="background: rgba(255,255,255,0.5); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <input type="text"
+                     placeholder="输入搜索描述，如：'海边的日落照片'、'红色的汽车'、'包含合同的PDF'"
+                     style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
+                     id="aiSearchInput">
+              <button class="btn btn-primary" onclick="performAISearch()" style="white-space: nowrap;">
+                🔍 搜索
+              </button>
+            </div>
+            <div style="font-size: 0.85em; color: #888;">
+              💡 提示：需要下载 CLIP 模型才能使用图片搜索功能
+            </div>
+          </div>
+
+          <div id="aiSearchResults" style="display: none;">
+            <h4 style="margin-bottom: 10px; font-size: 14px;">搜索结果：</h4>
+            <div class="file-list" id="aiSearchResultsList" style="max-height: 300px; overflow-y: auto;">
+              <!-- 搜索结果将显示在这里 -->
+            </div>
+          </div>
+
+          <div style="margin-top: 15px; padding: 10px; background: rgba(176, 224, 230, 0.3); border-radius: 8px; border-left: 3px solid var(--sky);">
+            <strong style="font-size: 0.9em; color: #1976d2;">✨ 支持的搜索类型：</strong>
+            <ul style="margin-top: 5px; padding-left: 18px; font-size: 0.85em; color: #666;">
+              <li>🖼️ <strong>图片内容搜索</strong> - "一只猫的照片"、"蓝天白云"</li>
+              <li>📄 <strong>文档内容搜索</strong> - "包含发票的PDF"、"2024年的报告"</li>
+              <li>🎨 <strong>颜色/风格搜索</strong> - "红色的图片"、"黑白照片"</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">📁 分类结果</h2>
+          <div class="stats" id="categoryStats">
+            <div class="stat-item">
+              <div class="stat-number" id="catSoftware">0</div>
+              <div class="stat-label">软件</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="catFont">0</div>
+              <div class="stat-label">字体</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="catImage">0</div>
+              <div class="stat-label">图片</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="catMusic">0</div>
+              <div class="stat-label">音乐</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="catVideo">0</div>
+              <div class="stat-label">电影</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="catOther">0</div>
+              <div class="stat-label">其他</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">🎯 分类详情</h2>
+        <div class="file-list" id="classList"></div>
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div id="settings-tab" class="tab-content">
+      <div class="card settings-panel">
+        <!-- LOGO和简介 -->
+        <div class="app-header" style="text-align: center; padding: 20px 0; border-bottom: 2px solid var(--lavender); margin-bottom: 20px;">
+          <img src="assets/logo.svg" alt="FileSense AI" style="width: 80px; height: 80px; margin-bottom: 15px;">
+          <h1 style="font-size: 1.8em; color: var(--text); margin-bottom: 10px; background: linear-gradient(135deg, #FF6B9D, #C44569); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">FileSense AI (灵析)</h1>
+          <p style="font-size: 0.95em; color: #666; line-height: 1.6; max-width: 600px; margin: 0 auto; text-align: left; padding: 15px; background: var(--lavender); border-radius: 10px;">
+            <strong>FileSense AI (灵析)</strong> 是一款专为重度电脑用户、创作者和极客打造的下一代桌面文件整理助手。基于 Electron 架构，应用内嵌了极其轻量且强悍的本地 AI 引擎（涵盖 BGE 语义向量、CLIP 视觉理解与 Qwen 语言模型），将传统的文件管理从死板的"哈希精确匹配"，拉升到了"AI 语义模糊理解"的全新维度。
+          </p>
+        </div>
+
+        <h2 class="card-title">🤖 AI 智能引擎配置</h2>
+        
+        <!-- 硬件信息展示 -->
+        <div class="hardware-info" id="hardwareInfo">
+          <div class="hardware-item">
+            <span class="hardware-label">💻 CPU:</span>
+            <span class="hardware-value" id="cpuInfo">检测中...</span>
+          </div>
+          <div class="hardware-item">
+            <span class="hardware-label">🧠 内存:</span>
+            <span class="hardware-value" id="memoryInfo">检测中...</span>
+          </div>
+          <div class="hardware-item">
+            <span class="hardware-label">🎮 GPU:</span>
+            <span class="hardware-value" id="gpuInfo">检测中...</span>
+          </div>
+          <div class="hardware-item">
+            <span class="hardware-label">⚡ 指令集:</span>
+            <span class="hardware-value" id="instructionInfo">检测中...</span>
+          </div>
+        </div>
+
+        <!-- AI 模式选择 -->
+        <div class="ai-mode-selector">
+          <h3 style="margin-bottom: 15px;">选择 AI 运行模式</h3>
+          
+          <div class="mode-cards">
+            <!-- 完全 AI 模式 -->
+            <div class="mode-card" data-mode="FULL_AI" onclick="selectAIMode('FULL_AI')">
+              <div class="mode-icon">🚀</div>
+              <h4>完全 AI 模式</h4>
+              <ul class="mode-features">
+                <li>✅ 图片感知相似检测</li>
+                <li>✅ 文档语义相似检测</li>
+                <li>✅ 深度内容比对</li>
+              </ul>
+              <div class="mode-specs">
+                <span class="spec-memory">~2GB 内存</span>
+                <span class="spec-speed">中等速度</span>
+              </div>
+              <div class="mode-badge recommended" id="fullAiRec" style="display:none;">系统推荐</div>
+            </div>
+
+            <!-- 平衡模式 -->
+            <div class="mode-card" data-mode="BALANCED" onclick="selectAIMode('BALANCED')">
+              <div class="mode-icon">⚖️</div>
+              <h4>平衡模式</h4>
+              <ul class="mode-features">
+                <li>✅ 图片感知相似检测</li>
+                <li>✅ 文档语义相似检测</li>
+                <li>❌ 深度内容比对</li>
+              </ul>
+              <div class="mode-specs">
+                <span class="spec-memory">~200MB 内存</span>
+                <span class="spec-speed">快速</span>
+              </div>
+              <div class="mode-badge recommended" id="balancedRec" style="display:none;">系统推荐</div>
+            </div>
+
+            <!-- 极速模式 -->
+            <div class="mode-card" data-mode="LITE" onclick="selectAIMode('LITE')">
+              <div class="mode-icon">💨</div>
+              <h4>极速模式</h4>
+              <ul class="mode-features">
+                <li>✅ 文档语义相似检测</li>
+                <li>❌ 图片感知相似</li>
+                <li>❌ 深度内容比对</li>
+              </ul>
+              <div class="mode-specs">
+                <span class="spec-memory">~50MB 内存</span>
+                <span class="spec-speed">极快</span>
+              </div>
+              <div class="mode-badge recommended" id="liteRec" style="display:none;">系统推荐</div>
+            </div>
+
+            <!-- 基础模式 -->
+            <div class="mode-card" data-mode="MINIMAL" onclick="selectAIMode('MINIMAL')">
+              <div class="mode-icon">🐢</div>
+              <h4>基础模式</h4>
+              <ul class="mode-features">
+                <li>❌ 所有 AI 功能</li>
+                <li>✅ 传统哈希比对</li>
+              </ul>
+              <div class="mode-specs">
+                <span class="spec-memory">&lt;10MB 内存</span>
+                <span class="spec-speed">最快</span>
+              </div>
+              <div class="mode-badge recommended" id="minimalRec" style="display:none;">系统推荐</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模型管理 -->
+        <div class="model-management">
+          <h3 style="margin-bottom: 15px;">AI 模型管理</h3>
+          
+          <div class="model-list" id="modelList">
+            <div class="model-item">
+              <div class="model-info">
+                <strong>📝 bge-micro-v2</strong>
+                <span class="model-size" id="embeddingSize">22MB</span>
+              </div>
+              <div class="model-status">
+                <span class="status-text" id="embeddingStatus">未安装</span>
+                <button class="btn-sm" onclick="handleModelAction('EMBEDDING')" id="embedBtn">下载</button>
+              </div>
+            </div>
+
+            <div class="model-item">
+              <div class="model-info">
+                <strong>🖼️ clip-vit-b-32</strong>
+                <span class="model-size" id="clipSize">578MB</span>
+              </div>
+              <div class="model-status">
+                <span class="status-text" id="clipStatus">未安装</span>
+                <button class="btn-sm" onclick="handleModelAction('CLIP')" id="clipBtn">下载</button>
+              </div>
+            </div>
+            
+            <div class="model-item">
+              <div class="model-info">
+                <strong>🧠 Qwen2.5-1.5B</strong>
+                <span class="model-size" id="llmSize">986MB</span>
+              </div>
+              <div class="model-status">
+                <span class="status-text" id="llmStatus">未安装</span>
+                <button class="btn-sm" onclick="handleModelAction('LLM')" id="llmBtn">下载</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 下载进度 -->
+          <div class="download-progress" id="downloadProgress" style="display: none;">
+            <div class="progress-header">
+              <span class="progress-title" id="downloadTitle">正在下载模型...</span>
+              <button class="btn-cancel-download" onclick="cancelDownload()">取消</button>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+            </div>
+            <div class="progress-details">
+              <span id="progressPercent">0%</span>
+              <span id="progressSpeed">0 MB/s</span>
+              <span id="progressETA">剩余时间：计算中...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 高级选项 -->
+        <div class="advanced-options">
+          <h3 style="margin-bottom: 15px;">高级选项</h3>
+          
+          <div class="option-group">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="autoMode" checked onchange="toggleAutoMode()">
+              <span>自动根据硬件配置选择最佳模式</span>
+            </label>
+          </div>
+          
+          <div class="option-group">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="lazyLoad" checked>
+              <span>懒加载模型（按需加载，60 分钟无操作自动卸载）</span>
+            </label>
+          </div>
+          
+          <div class="option-group">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="backgroundPreprocess">
+              <span>后台预处理（空闲时预计算文件特征）</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 保存按钮 -->
+        <div style="margin-top: 30px; text-align: right;">
+          <button class="btn" onclick="resetToDefault()">恢复默认</button>
+          <button class="btn btn-primary" onclick="saveAISettings()">保存配置</button>
+        </div>
+
+        <!-- 赞助开发者 -->
+        <div style="margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #FFF5F7, #F0E6FF); border-radius: 15px; border: 2px dashed #FFB7C5;">
+          <h3 style="text-align: center; margin-bottom: 15px; color: #C44569;">💰 赞助开发者（保护头发计划）</h3>
+          <p style="font-size: 0.9em; color: #666; line-height: 1.6; text-align: center; margin-bottom: 20px;">
+            作为一款 100% 本地运行的免费开源软件，FileSense 不会向你的文件伸出收费的魔爪。如果它刚刚帮你用"降维打击"干掉了几 GB 的垃圾文件，不妨扫码赞助一下，为熬夜手搓 AI 引擎的开发者补充一点碳水和咖啡因。
+          </p>
+          <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="showQRCode('wechat')" style="background: #07C160; border-color: #07C160;">
+              <span style="margin-right: 5px;">💚</span> 微信支付
+            </button>
+            <button class="btn btn-primary" onclick="showQRCode('alipay')" style="background: #1677FF; border-color: #1677FF;">
+              <span style="margin-right: 5px;">💙</span> 支付宝
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 二维码弹窗 -->
+  <div id="qrModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 30px; border-radius: 20px; text-align: center; max-width: 400px; position: relative;">
+      <button onclick="closeQRCode()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+      <h3 id="qrTitle" style="margin-bottom: 20px; color: #333;">扫码赞助</h3>
+      <img id="qrImage" src="" alt="收款码" style="max-width: 300px; max-height: 400px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+      <p style="margin-top: 15px; color: #666; font-size: 0.9em;">感谢您的支持！🙏</p>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    const path = require('path');
+    
+    let selectedDirectory = '';
+    let scannedFiles = [];
+    let duplicateFiles = [];
+    let selectedDuplicates = new Set(); // 存储选中的重复文件索引
+    let isScanning = false;
+    let isPaused = false;
+    let keepSelection = {}; // 存储每组选择保留哪个文件 'original' or 'duplicate'
+
+    // 判断是否为图片文件
+    function isImageFile(filePath) {
+      if (!filePath) return false;
+      const ext = path.extname(filePath).toLowerCase().slice(1);
+      const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'heic', 'heif'];
+      return imageExts.includes(ext);
+    }
+
+    // 判断是否为视频文件
+    function isVideoFile(filePath) {
+      if (!filePath) return false;
+      const ext = path.extname(filePath).toLowerCase().slice(1);
+      const videoExts = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'rmvb', 'rm'];
+      return videoExts.includes(ext);
+    }
+
+    // 加载本地图片（使用 file:// 协议）
+    async function loadLocalImage(filePath, imgElement) {
+      if (!filePath || !imgElement) return;
+
+      // 先设置错误处理
+      imgElement.onerror = () => {
+        console.warn(`[Preview] 图片显示失败: ${filePath}`);
+        imgElement.style.display = 'none';
+      };
+
+      try {
+        // 使用 IPC 获取图片的 base64 数据
+        console.log(`[Preview] 请求缩略图: ${filePath}`);
+        const base64 = await ipcRenderer.invoke('get-image-thumbnail', filePath);
+        if (base64 && base64.startsWith('data:')) {
+          imgElement.src = base64;
+          imgElement.style.display = 'block';
+          console.log(`[Preview] 图片加载成功(base64): ${path.basename(filePath)}`);
+        } else {
+          // 如果 IPC 失败，尝试 file:// 协议
+          const normalizedPath = filePath.replace(/\\/g, '/');
+          const fileUrl = `file:///${normalizedPath}`;
+          console.log(`[Preview] 使用file协议: ${fileUrl}`);
+          imgElement.src = fileUrl;
+          imgElement.style.display = 'block';
+        }
+      } catch (err) {
+        console.warn(`[Preview] 加载图片失败: ${filePath}`, err);
+        // 失败时尝试file协议
+        try {
+          const normalizedPath = filePath.replace(/\\/g, '/');
+          imgElement.src = `file:///${normalizedPath}`;
+          imgElement.style.display = 'block';
+        } catch (e) {
+          imgElement.style.display = 'none';
+        }
+      }
+    }
+
+    // 监听扫描进度
+    ipcRenderer.on('scan-progress', (event, progress) => {
+      const status = document.getElementById('scanStatus');
+      const progressFill = document.getElementById('progressFill');
+      
+      if (progress.stage === 'metadata') {
+        status.textContent = `正在收集元数据：${progress.current}/${progress.total}`;
+        progressFill.style.width = `${(progress.current / progress.total) * 50}%`;
+      } else if (progress.stage === 'hashing') {
+        status.textContent = `正在计算哈希：${progress.current}/${progress.total}`;
+        progressFill.style.width = `${50 + (progress.current / progress.total) * 50}%`;
+      }
+    });
+
+    // Tab 切换
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+      });
+    });
+
+    // 显示指定标签页（用于按钮点击）
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      // 找到对应的tab按钮并激活
+      const tabBtn = document.querySelector(`.tab[data-tab="${tabId.replace('-tab', '')}"]`);
+      if (tabBtn) {
+        tabBtn.classList.add('active');
+      }
+
+      // 激活对应的内容
+      const tabContent = document.getElementById(tabId);
+      if (tabContent) {
+        tabContent.classList.add('active');
+      }
+
+      // 控制主标题栏显示/隐藏（设置页面隐藏）
+      const header = document.querySelector('header');
+      if (header) {
+        header.style.display = tabId === 'settings-tab' ? 'none' : 'block';
+      }
+
+      // 如果切换到设置页面，刷新模型状态
+      if (tabId === 'settings-tab') {
+        refreshModelStatus();
+      }
+    }
+
+    // 选择目录
+    async function selectDirectory() {
+      const dirPath = await ipcRenderer.invoke('select-directory');
+      if (dirPath) {
+        selectedDirectory = dirPath;
+        document.getElementById('selectedPath').textContent = dirPath;
+        document.getElementById('scanBtn').disabled = false;
+        showNotification('目录已选择');
+      }
+    }
+
+    // 开始扫描
+    async function startScan() {
+      if (!selectedDirectory) return;
+
+      const scanBtn = document.getElementById('scanBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const progress = document.getElementById('scanProgress');
+      const progressFill = document.getElementById('progressFill');
+      const status = document.getElementById('scanStatus');
+      
+      isScanning = true;
+      isPaused = false;
+      
+      // 更新按钮状态
+      scanBtn.disabled = true;
+      scanBtn.textContent = '扫描中...';
+      pauseBtn.style.display = 'inline-block';
+      pauseBtn.disabled = false;
+      cancelBtn.style.display = 'inline-block';
+      cancelBtn.disabled = false;
+      
+      progress.style.display = 'block';
+      progressFill.style.width = '0%';
+      status.textContent = '正在初始化扫描引擎...';
+
+      // 获取扫描选项
+      const scanOptions = {
+        software: document.getElementById('scanSoftware').checked,
+        images: document.getElementById('scanImages').checked,
+        documents: document.getElementById('scanDocuments').checked,
+        usePerceptualHash: document.getElementById('usePerceptualHash').checked
+      };
+
+      try {
+        const results = await ipcRenderer.invoke('scan-files', selectedDirectory);
+        
+        // 更新进度
+        progressFill.style.width = '100%';
+        status.textContent = '扫描完成！';
+        
+        // 更新统计
+        document.getElementById('totalFiles').textContent = results.total;
+        
+        if (results.byCategory) {
+          document.getElementById('softwareCount').textContent = results.byCategory.SOFTWARE?.count || 0;
+          document.getElementById('imageCount').textContent = results.byCategory.IMAGE?.count || 0;
+          document.getElementById('documentCount').textContent = results.byCategory.DOCUMENT?.count || 0;
+        }
+        
+        document.getElementById('duplicateCount').textContent = results.duplicates.length;
+        const spaceSaved = results.duplicates.reduce((sum, d) => sum + (d.duplicate.size || 0), 0);
+        document.getElementById('spaceSaved').textContent = formatSize(spaceSaved);
+        
+        // 保存结果用于后续处理
+        // 从 results 中提取文件列表（processed 是实际处理的文件数，需要从分类中收集）
+        scannedFiles = Object.values(results.byCategory).flatMap(cat => cat.files || []);
+        // 如果没有分类文件，使用空数组
+        if (scannedFiles.length === 0 && results.total > 0) {
+          console.warn('[前端] 扫描完成但文件列表为空，尝试使用其他方式获取');
+          // 备用：如果扫描器返回了文件列表则使用
+          scannedFiles = results.files || [];
+        }
+        duplicateFiles = results.duplicates || [];
+        
+        showNotification(`扫描完成，共找到 ${results.total} 个文件，${results.duplicates.length} 组重复`);
+        
+        // 自动切换到重复文件标签页
+        setTimeout(() => {
+          document.querySelector('[data-tab="duplicates"]').click();
+          displayDuplicates();
+          updateSelectedCount();
+          document.getElementById('selectAllBtn').disabled = duplicateFiles.length === 0;
+        }, 1000);
+        
+      } catch (err) {
+        if (err.message === 'SCAN_CANCELLED') {
+          showNotification('扫描已取消');
+          status.textContent = '扫描已取消';
+        } else {
+          showNotification('扫描失败：' + err.message);
+          status.textContent = '扫描失败';
+        }
+      } finally {
+        isScanning = false;
+        isPaused = false;
+        
+        // 恢复按钮状态
+        scanBtn.disabled = false;
+        scanBtn.textContent = '开始扫描';
+        pauseBtn.style.display = 'none';
+        pauseBtn.disabled = true;
+        cancelBtn.style.display = 'none';
+        cancelBtn.disabled = true;
+        
+        setTimeout(() => { 
+          progress.style.display = 'none';
+          status.textContent = '';
+        }, 2000);
+      }
+    }
+
+    // 暂停扫描
+    async function pauseScan() {
+      if (!isScanning) return;
+      
+      const pauseBtn = document.getElementById('pauseBtn');
+      const status = document.getElementById('scanStatus');
+      
+      if (!isPaused) {
+        // 暂停
+        await ipcRenderer.invoke('pause-scan');
+        isPaused = true;
+        pauseBtn.textContent = '▶️ 继续';
+        pauseBtn.classList.add('paused');
+        status.textContent += ' (已暂停)';
+        showNotification('扫描已暂停');
+      } else {
+        // 恢复
+        await ipcRenderer.invoke('resume-scan');
+        isPaused = false;
+        pauseBtn.textContent = '⏸️ 暂停';
+        pauseBtn.classList.remove('paused');
+        status.textContent = status.textContent.replace(' (已暂停)', '');
+        showNotification('扫描已恢复');
+      }
+    }
+
+    // 终止扫描
+    async function cancelScan() {
+      if (!isScanning) return;
+      
+      const scanBtn = document.getElementById('scanBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const status = document.getElementById('scanStatus');
+      
+      await ipcRenderer.invoke('cancel-scan');
+      
+      isScanning = false;
+      isPaused = false;
+      
+      // 恢复按钮状态
+      scanBtn.disabled = false;
+      scanBtn.textContent = '开始扫描';
+      pauseBtn.style.display = 'none';
+      pauseBtn.disabled = true;
+      cancelBtn.style.display = 'none';
+      cancelBtn.disabled = true;
+      
+      status.textContent = '扫描已终止';
+      showNotification('扫描已终止');
+      
+      setTimeout(() => { 
+        document.getElementById('scanProgress').style.display = 'none';
+        status.textContent = '';
+      }, 2000);
+    }
+
+    // 查找重复文件进度监听
+    let findDuplicatesCancel = false;
+    let findDuplicatesPaused = false;
+    let currentFindOperation = null; // 存储当前进行的操作以便取消
+
+    // 监听查找进度
+    ipcRenderer.on('find-duplicates-progress', (event, progress) => {
+      const progressContainer = document.getElementById('findProgressContainer');
+      const progressBar = document.getElementById('findProgressBar');
+      const progressText = document.getElementById('findProgressText');
+      const progressPercent = document.getElementById('findProgressPercent');
+      const progressDetail = document.getElementById('findProgressDetail');
+
+      if (progress.stage === 'complete') {
+        progressContainer.style.display = 'none';
+        return;
+      }
+
+      progressContainer.style.display = 'block';
+      const percent = Math.round((progress.current / progress.total) * 100);
+      progressBar.style.width = percent + '%';
+      progressText.textContent = progress.message;
+      progressPercent.textContent = percent + '%';
+      progressDetail.textContent = `${progress.current} / ${progress.total}`;
+
+      // 同步更新仪表盘
+      if (progress.stage === 'hashing') {
+        // 更新重复文件计数
+        document.getElementById('duplicateCount').textContent = progress.current;
+      } else if (progress.stage === 'ai-analysis') {
+        // 更新AI分析中的数量
+        global.aiProcessing = progress.current;
+      }
+    });
+
+    // 查找重复文件
+    async function findDuplicates() {
+      console.log('[前端] findDuplicates 被调用，scannedFiles:', { length: scannedFiles?.length, type: typeof scannedFiles, isArray: Array.isArray(scannedFiles) });
+
+      if (!scannedFiles || !Array.isArray(scannedFiles) || scannedFiles.length === 0) {
+        showNotification('请先扫描文件');
+        return;
+      }
+
+      const btn = document.getElementById('findDupBtn');
+      const pauseBtn = document.getElementById('pauseDupBtn');
+      const cancelBtn = document.getElementById('cancelDupBtn');
+
+      btn.textContent = '查找中...';
+      btn.disabled = true;
+      pauseBtn.style.display = 'inline-block';
+      cancelBtn.style.display = 'inline-block';
+      findDuplicatesCancel = false;
+
+      try {
+        // 获取AI选项
+        const usePerceptualHash = document.getElementById('usePerceptualHash')?.checked || false;
+        const useSemanticHash = document.getElementById('useSemanticHash')?.checked || false;
+        const useAICompare = document.getElementById('useAICompare')?.checked || false;
+
+        console.log('[前端] AI选项:', { usePerceptualHash, useSemanticHash, useAICompare });
+        console.log('[前端] 已有重复文件:', duplicateFiles.length, '组');
+
+        // 如果启用了AI选项，执行AI智能比对流程
+        if (usePerceptualHash || useSemanticHash || useAICompare) {
+          console.log('[前端] 执行AI智能比对流程...');
+
+          // 显示AI分析进度条
+          document.getElementById('findProgressContainer').style.display = 'block';
+          document.getElementById('findProgressText').textContent = '正在准备AI智能比对...';
+          document.getElementById('findProgressBar').style.width = '0%';
+          document.getElementById('findProgressPercent').textContent = '0%';
+
+          // 更新按钮状态
+          btn.textContent = 'AI分析中...';
+
+          // 第一步：基础哈希查找（内部执行，不显示单独进度）
+          console.log('[前端] 第一步：基础哈希查重...');
+          duplicateFiles = await ipcRenderer.invoke('find-duplicates', scannedFiles);
+          console.log('[前端] 基础查重完成，找到:', duplicateFiles.length, '组重复');
+
+          // 第二步：对重复文件组进行AI智能分析
+          if (duplicateFiles.length > 0) {
+            console.log('[前端] 第二步：对重复文件组进行AI智能分析...');
+            duplicateFiles = await ipcRenderer.invoke('ai-smart-compare', {
+              duplicates: duplicateFiles,
+              usePerceptualHash,
+              useSemanticHash,
+              useAICompare
+            });
+            console.log('[前端] AI智能分析完成');
+          }
+        } else {
+          // 基础查找（仅MD5哈希）
+          console.log('[前端] 执行基础哈希查重...');
+          duplicateFiles = await ipcRenderer.invoke('find-duplicates', scannedFiles);
+          console.log('[前端] 基础查重完成，找到:', duplicateFiles.length, '组重复');
+        }
+        selectedDuplicates.clear(); // 清空选择
+
+        console.log('[前端] 收到重复文件数据:', duplicateFiles.length, '组');
+
+        // 验证时间数据
+        if (duplicateFiles.length > 0) {
+          const first = duplicateFiles[0];
+          console.log('[前端] 第一组数据详情:', {
+            path: first.original.path,
+            modified: first.original.modifiedTime,
+            created: first.original.createdTime,
+            hasModified: !!first.original.modifiedTime,
+            hasCreated: !!first.original.createdTime,
+            modifiedType: typeof first.original.modifiedTime,
+            createdType: typeof first.original.createdTime,
+            debug: first.original._debug
+          });
+
+          // 测试 formatDate 函数
+          const testDate = formatDate(first.original.modifiedTime);
+          console.log('[前端] formatDate 测试:', {
+            input: first.original.modifiedTime,
+            output: testDate,
+            isUnknown: testDate === '未知'
+          });
+        }
+
+        document.getElementById('duplicateCount').textContent = duplicateFiles.length;
+        const spaceSaved = duplicateFiles.reduce((sum, d) => sum + d.duplicate.size, 0);
+        document.getElementById('spaceSaved').textContent = formatSize(spaceSaved);
+
+        // 计算AI分析的文件数量
+        let aiAnalyzedCount = 0;
+        if (usePerceptualHash || useSemanticHash || useAICompare) {
+          aiAnalyzedCount = duplicateFiles.filter(d => d.aiAnalysis && d.aiAnalysis.analyzed).length;
+          // 更新全局扫描统计中的AI分析数
+          global.aiAnalyzedCount = aiAnalyzedCount;
+        }
+
+        displayDuplicates();
+        updateSelectedCount();
+
+        // 启用全选按钮
+        document.getElementById('selectAllBtn').disabled = duplicateFiles.length === 0;
+
+        // 显示完成通知
+        if (aiAnalyzedCount > 0) {
+          showNotification(`AI分析完成：${aiAnalyzedCount} 组文件已进行智能比对`);
+        } else {
+          showNotification(`找到 ${duplicateFiles.length} 组重复文件`);
+        }
+      } catch (err) {
+        // 检查错误消息是否包含"查找已取消"（包括嵌套错误）
+        const errorMessage = err.message || '';
+        const isCancelled = errorMessage.includes('查找已取消') ||
+                           (err.cause && err.cause.message && err.cause.message.includes('查找已取消'));
+
+        if (!isCancelled) {
+          showNotification('查找失败：' + err.message);
+          console.error('[前端] 查找重复文件失败:', err);
+        } else {
+          console.log('[前端] 查找已被用户取消');
+        }
+      } finally {
+        btn.textContent = '查找重复文件';
+        btn.disabled = false;
+        pauseBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        document.getElementById('findProgressContainer').style.display = 'none';
+      }
+    }
+
+    // 暂停查找
+    function pauseFindDuplicates() {
+      if (findDuplicatesPaused) {
+        // 继续
+        findDuplicatesPaused = false;
+        document.getElementById('pauseDupBtn').textContent = '⏸️ 暂停';
+        showNotification('继续查找...');
+        // 通知后端继续
+        ipcRenderer.invoke('find-duplicates-pause', false);
+      } else {
+        // 暂停
+        findDuplicatesPaused = true;
+        document.getElementById('pauseDupBtn').textContent = '▶️ 继续';
+        showNotification('查找已暂停，点击继续恢复');
+        // 通知后端暂停
+        ipcRenderer.invoke('find-duplicates-pause', true);
+      }
+    }
+
+    // 终止查找
+    async function cancelFindDuplicates() {
+      findDuplicatesCancel = true;
+      findDuplicatesPaused = false;
+      document.getElementById('pauseDupBtn').textContent = '⏸️ 暂停';
+      showNotification('正在终止查找...');
+
+      // 通知后端取消
+      await ipcRenderer.invoke('find-duplicates-cancel');
+
+      // 重置UI状态
+      const btn = document.getElementById('findDupBtn');
+      const pauseBtn = document.getElementById('pauseDupBtn');
+      const cancelBtn = document.getElementById('cancelDupBtn');
+
+      btn.textContent = '查找重复文件';
+      btn.disabled = false;
+      pauseBtn.style.display = 'none';
+      cancelBtn.style.display = 'none';
+      document.getElementById('findProgressContainer').style.display = 'none';
+
+      showNotification('查找已终止');
+    }
+
+    // 虚拟滚动实例
+    let duplicateScroller = null;
+    let lastGridColumns = 1;
+
+    // 使用事件委托处理所有按钮点击
+    document.addEventListener('click', (e) => {
+      // 处理图片预览点击
+      const img = e.target.closest('img[data-preview="true"]');
+      if (img) {
+        const filePath = img.dataset.path;
+        if (filePath) previewImage(filePath);
+        return;
+      }
+
+      // 处理确认对话框按钮
+      const confirmBtn = e.target.closest('[data-confirm]');
+      if (confirmBtn) {
+        const confirmAction = confirmBtn.dataset.confirm;
+        const dialog = document.getElementById('delete-confirm-dialog');
+
+        if (confirmAction === 'cancel') {
+          if (dialog) dialog.remove();
+          pendingDeleteIndex = null;
+        } else if (confirmAction === 'delete') {
+          if (dialog) dialog.remove();
+          if (pendingDeleteIndex !== null) {
+            confirmSingleDelete(pendingDeleteIndex);
+            pendingDeleteIndex = null;
+          }
+        }
+        return;
+      }
+
+      // 处理重复文件列表按钮
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const filePath = btn.dataset.path;
+      const index = btn.dataset.index;
+
+      switch (action) {
+        case 'open':
+          if (filePath) ipcRenderer.invoke('open-file-location', filePath);
+          break;
+        case 'preview':
+          if (filePath) previewImage(filePath);
+          break;
+        case 'play':
+          if (filePath) ipcRenderer.invoke('open-file', filePath);
+          break;
+        case 'delete':
+          if (index !== undefined) deleteSingleDuplicate(parseInt(index));
+          break;
+      }
+    });
+
+    // 防抖函数
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // 监听窗口大小变化，动态调整重复文件列表布局
+    window.addEventListener('resize', debounce(() => {
+      if (duplicateFiles.length > 0) {
+        const currentColumns = getDuplicateGridColumns();
+        // 列数变化时重新渲染
+        if (currentColumns !== lastGridColumns) {
+          console.log(`[UI] 窗口大小变化，重新布局: ${lastGridColumns}列 -> ${currentColumns}列`);
+          lastGridColumns = currentColumns;
+          displayDuplicates();
+        }
+      }
+    }, 300));
+
+    // 显示重复文件（带比对界面）- 使用传统渲染避免虚拟滚动问题
+    function displayDuplicates() {
+      const list = document.getElementById('duplicateList');
+
+      // 销毁旧的虚拟滚动实例
+      if (duplicateScroller) {
+        duplicateScroller.destroy();
+        duplicateScroller = null;
+      }
+
+      if (duplicateFiles.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">未发现重复文件</p>';
+        document.getElementById('batchActions').style.display = 'none';
+        return;
+      }
+
+      // 使用传统渲染（避免虚拟滚动导致的重叠问题）
+      renderDuplicatesTraditional(list);
+    }
+
+    // 传统渲染（所有数据量）
+    function renderDuplicatesTraditional(list) {
+      // 设置正确的类名和样式
+      list.className = 'file-list';
+      list.style.display = 'grid';
+      list.style.gridTemplateColumns = `repeat(${getDuplicateGridColumns()}, 1fr)`;
+      list.style.gap = '20px';
+      list.style.alignItems = 'start';
+
+      // 分批渲染大量数据以避免界面卡顿
+      const batchSize = 20;
+      const totalBatches = Math.ceil(duplicateFiles.length / batchSize);
+
+      // 先渲染第一批
+      const firstBatch = duplicateFiles.slice(0, batchSize);
+      list.innerHTML = firstBatch.map((group, index) => {
+        return renderDuplicateGroup(group, index);
+      }).join('');
+
+      // 加载第一批缩略图
+      setTimeout(() => {
+        for (let i = 0; i < firstBatch.length; i++) {
+          loadThumbnailForIndex(i);
+        }
+      }, 100);
+
+      // 如果有更多批次，延迟渲染
+      if (totalBatches > 1) {
+        let currentBatch = 1;
+        const renderNextBatch = () => {
+          if (currentBatch >= totalBatches) {
+            document.getElementById('batchActions').style.display = 'flex';
+            return;
+          }
+
+          const start = currentBatch * batchSize;
+          const end = Math.min(start + batchSize, duplicateFiles.length);
+          const batch = duplicateFiles.slice(start, end);
+
+          const html = batch.map((group, idx) => {
+            return renderDuplicateGroup(group, start + idx);
+          }).join('');
+
+          // 使用insertAdjacentHTML追加内容
+          list.insertAdjacentHTML('beforeend', html);
+
+          // 加载这一批的缩略图
+          setTimeout(() => {
+            for (let i = start; i < end; i++) {
+              loadThumbnailForIndex(i);
+            }
+          }, 50);
+
+          currentBatch++;
+          // 使用requestIdleCallback或setTimeout避免阻塞UI
+          if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(renderNextBatch, { timeout: 100 });
+          } else {
+            setTimeout(renderNextBatch, 50);
+          }
+        };
+
+        setTimeout(renderNextBatch, 200);
+      } else {
+        document.getElementById('batchActions').style.display = 'flex';
+      }
+    }
+
+    // 获取当前重复文件网格列数
+    function getDuplicateGridColumns() {
+      const width = window.innerWidth;
+      if (width <= 1400) return 1;
+      if (width <= 2000) return 2;
+      if (width <= 2600) return 3;
+      return 4;
+    }
+
+    // 渲染单个重复组HTML
+    function renderDuplicateGroup(group, index) {
+      const isImage = isImageFile(group.original.path);
+      const isVideo = isVideoFile(group.original.path);
+      const showPreview = isImage || isVideo;
+
+      return `
+      <div class="duplicate-group" id="dup-group-${index}">
+        <div class="duplicate-header">
+          <span>📋 重复组 #${index + 1} · ${path.basename(group.original.path)}</span>
+          <span class="badge badge-other">${formatSize(group.original.size)}</span>
+        </div>
+
+        <div class="duplicate-compare">
+          <div class="file-compare-card keep" data-action="keep">
+            <div class="file-compare-name">✅ 保留此文件</div>
+            ${showPreview ? `<div class="file-preview">${isVideo ? '<video muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>' : '<img data-path="' + group.original.path + '" data-preview="true" onerror="this.style.display=\'none\'" style="max-width:100%;max-height:100%;object-fit:contain;cursor:pointer;">'}</div>` : ''}
+            <div class="file-compare-path" title="${group.original.path}">${formatPath(group.original.path)}</div>
+            <div class="file-compare-meta">
+              <div>📅 修改时间：${formatDate(group.original.modifiedTime)}</div>
+              <div>📏 创建时间：${formatDate(group.original.createdTime)}</div>
+            </div>
+            <label class="radio-wrapper">
+              <input type="radio" name="keep-${index}" value="original" checked onchange="selectKeepFile(${index}, 'original')">
+              <span>保留这个</span>
+            </label>
+          </div>
+
+          <div class="compare-arrow">⚖️ 比对</div>
+
+          <div class="file-compare-card delete" data-action="delete">
+            <div class="file-compare-name">❌ 删除此文件</div>
+            ${showPreview ? `<div class="file-preview">${isVideo ? '<video muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>' : '<img data-path="' + group.duplicate.path + '" data-preview="true" onerror="this.style.display=\'none\'" style="max-width:100%;max-height:100%;object-fit:contain;cursor:pointer;">'}</div>` : ''}
+            <div class="file-compare-path" title="${group.duplicate.path}">${formatPath(group.duplicate.path)}</div>
+            <div class="file-compare-meta">
+              <div>📅 修改时间：${formatDate(group.duplicate.modifiedTime)}</div>
+              <div>📏 创建时间：${formatDate(group.duplicate.createdTime)}</div>
+            </div>
+            <label class="radio-wrapper">
+              <input type="radio" name="keep-${index}" value="duplicate" onchange="selectKeepFile(${index}, 'duplicate')">
+              <span>保留这个</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="duplicate-actions">
+          <div class="action-left">
+            <label class="checkbox-wrapper" style="cursor: pointer;">
+              <input type="checkbox"
+                     class="custom-checkbox"
+                     onchange="toggleDuplicateSelection(${index})"
+                     ${selectedDuplicates.has(index) ? 'checked' : ''}>
+              <span>标记为待删除（按上方选择）</span>
+            </label>
+          </div>
+          <div class="action-right">
+            <button class="btn btn-sm" data-action="open" data-path="${group.original.path}">📂 打开原文件位置</button>
+            <button class="btn btn-sm" data-action="open" data-path="${group.duplicate.path}">📂 打开副本位置</button>
+            ${isImage ? `<button class="btn btn-sm" data-action="preview" data-path="${group.original.path}">🖼️ 查看图片</button>` : ''}
+            ${isVideo ? `<button class="btn btn-sm" data-action="play" data-path="${group.original.path}">🎬 播放视频</button>` : ''}
+            <button class="btn btn-danger btn-sm" data-action="delete" data-index="${index}">🗑️ 立即删除副本</button>
+          </div>
+        </div>
+      </div>
+      `;
+    }
+
+    // 加载可见区域的缩略图（虚拟滚动优化）
+    function loadVisibleThumbnails() {
+      if (!duplicateScroller) return;
+
+      const columns = getDuplicateGridColumns();
+      const range = duplicateScroller.getVisibleRange();
+
+      if (columns === 1) {
+        // 单列模式：直接加载可见索引
+        for (let i = range.start; i <= range.end; i++) {
+          loadThumbnailForIndex(i);
+        }
+      } else {
+        // 多列网格模式：计算行内所有卡片
+        for (let row = range.start; row <= range.end; row++) {
+          for (let col = 0; col < columns; col++) {
+            const index = row * columns + col;
+            if (index < duplicateFiles.length) {
+              loadThumbnailForIndex(index);
+            }
+          }
+        }
+      }
+    }
+
+    // 加载指定索引的缩略图
+    async function loadThumbnailForIndex(index) {
+      const group = duplicateFiles[index];
+      if (!group) return;
+
+      const card = document.querySelector(`#dup-group-${index}`);
+      if (!card) return;
+
+      const isImage = isImageFile(group.original.path);
+      const isVideo = isVideoFile(group.original.path);
+
+      if (isImage) {
+        const img = card.querySelector('.file-compare-card.keep img');
+        const imgDup = card.querySelector('.file-compare-card.delete img');
+        // 简化加载逻辑：只要有data-path且没有有效的src就加载
+        if (img && img.dataset.path) {
+          const currentSrc = img.getAttribute('src');
+          if (!currentSrc || currentSrc === '' || currentSrc === 'null' || currentSrc === window.location.href) {
+            console.log(`[缩略图] 加载原文件: ${index}`, img.dataset.path);
+            await loadLocalImage(img.dataset.path, img);
+          }
+        }
+        if (imgDup && imgDup.dataset.path) {
+          const currentSrc = imgDup.getAttribute('src');
+          if (!currentSrc || currentSrc === '' || currentSrc === 'null' || currentSrc === window.location.href) {
+            console.log(`[缩略图] 加载副本文件: ${index}`, imgDup.dataset.path);
+            await loadLocalImage(imgDup.dataset.path, imgDup);
+          }
+        }
+      } else if (isVideo) {
+        const video = card.querySelector('.file-compare-card.keep video');
+        const videoDup = card.querySelector('.file-compare-card.delete video');
+        if (video && !video.src) {
+          // 视频使用 file:// 协议，但添加错误处理
+          video.src = `file://${group.original.path}`;
+          video.onerror = () => {
+            console.warn(`[Preview] 无法加载视频: ${group.original.path}`);
+            video.style.display = 'none';
+          };
+        }
+        if (videoDup && !videoDup.src) {
+          videoDup.src = `file://${group.duplicate.path}`;
+          videoDup.onerror = () => {
+            console.warn(`[Preview] 无法加载视频: ${group.duplicate.path}`);
+            videoDup.style.display = 'none';
+          };
+        }
+      }
+    }
+
+    // 传统缩略图加载（兼容旧代码）
+    async function loadDuplicateThumbnails() {
+      for (let i = 0; i < duplicateFiles.length; i++) {
+        await loadThumbnailForIndex(i);
+      }
+    }
+
+    // 虚拟滚动完成标记
+
+    // 切换单个重复文件的选择状态
+    function toggleDuplicateSelection(index) {
+      if (selectedDuplicates.has(index)) {
+        selectedDuplicates.delete(index);
+        document.getElementById(`dup-group-${index}`).classList.remove('selected');
+      } else {
+        selectedDuplicates.add(index);
+        document.getElementById(`dup-group-${index}`).classList.add('selected');
+      }
+      updateSelectedCount();
+    }
+
+    // 选择保留哪个文件（动态更新文字）
+    function selectKeepFile(groupIndex, keepWhich) {
+      keepSelection[groupIndex] = keepWhich;
+      console.log(`组 ${groupIndex}: 保留 ${keepWhich}`);
+      
+      // 更新 UI 高亮和文字
+      const group = document.getElementById(`dup-group-${groupIndex}`);
+      if (group) {
+        const keepCard = group.querySelector('.file-compare-card.keep');
+        const deleteCard = group.querySelector('.file-compare-card.delete');
+        
+        if (keepWhich === 'original') {
+          keepCard.classList.add('selected');
+          deleteCard.classList.remove('selected');
+          // 更新文字
+          keepCard.querySelector('.file-compare-name').textContent = '✅ 保留此文件';
+          deleteCard.querySelector('.file-compare-name').textContent = '❌ 删除此文件';
+        } else {
+          keepCard.classList.remove('selected');
+          deleteCard.classList.add('selected');
+          // 更新文字
+          keepCard.querySelector('.file-compare-name').textContent = '❌ 删除此文件';
+          deleteCard.querySelector('.file-compare-name').textContent = '✅ 保留此文件';
+        }
+      }
+    }
+
+    // 打开文件所在文件夹
+    function openFilePath(filePath) {
+      ipcRenderer.invoke('open-file-location', filePath);
+    }
+
+    // 预览图片（使用弹窗）
+    function previewImage(imagePath, filePath) {
+      showPreviewModal(imagePath, filePath || imagePath);
+    }
+
+    // 预览视频
+    function previewVideo(videoPath) {
+      ipcRenderer.invoke('open-file', videoPath);
+    }
+
+    // 全选/取消全选
+    function toggleSelectAll() {
+      const checkbox = document.getElementById('selectAllCheckbox');
+      const allChecked = checkbox.checked;
+      
+      if (allChecked) {
+        for (let i = 0; i < duplicateFiles.length; i++) {
+          selectedDuplicates.add(i);
+          document.getElementById(`dup-group-${i}`).classList.add('selected');
+        }
+      } else {
+        selectedDuplicates.clear();
+        document.querySelectorAll('.duplicate-group').forEach(el => el.classList.remove('selected'));
+      }
+      
+      updateSelectedCount();
+    }
+
+    // 更新选中计数
+    function updateSelectedCount() {
+      const count = selectedDuplicates.size;
+      document.getElementById('selectedCount').textContent = count;
+      document.getElementById('currentSelected').textContent = count;
+      document.getElementById('deleteSelectedBtn').disabled = count === 0;
+      
+      // 更新全选复选框状态
+      const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = selectedDuplicates.size === duplicateFiles.length && duplicateFiles.length > 0;
+      }
+    }
+
+    // 取消选择
+    function cancelSelection() {
+      selectedDuplicates.clear();
+      document.getElementById('selectAllCheckbox').checked = false;
+      document.querySelectorAll('.duplicate-group').forEach(el => el.classList.remove('selected'));
+      updateSelectedCount();
+    }
+
+    // 显示删除确认对话框
+    function showDeleteConfirm() {
+      if (selectedDuplicates.size === 0) {
+        showNotification('请先选择要删除的文件');
+        return;
+      }
+
+      const filesToDelete = Array.from(selectedDuplicates).map(idx => {
+        const group = duplicateFiles[idx];
+        const dupPath = group.duplicate.path;
+        return {
+          index: idx,
+          path: dupPath,
+          name: group.duplicate.name || path.basename(dupPath)
+        };
+      });
+
+      const totalSize = filesToDelete.reduce((sum, f) => {
+        const group = duplicateFiles[f.index];
+        return sum + group.duplicate.size;
+      }, 0);
+
+      const confirmDialog = document.createElement('div');
+      confirmDialog.className = 'confirm-dialog';
+      confirmDialog.innerHTML = `
+        <div class="confirm-box">
+          <div class="confirm-title">⚠️ 确认删除</div>
+          <div class="confirm-message">
+            您即将删除 <strong>${filesToDelete.length}</strong> 个文件，总计 <strong>${formatSize(totalSize)}</strong>。<br>
+            此操作不可恢复，请确认这些文件确实不需要。
+          </div>
+          <div class="confirm-files-list">
+            ${filesToDelete.slice(0, 10).map(f => `<div>📄 ${f.name}</div>`).join('')}
+            ${filesToDelete.length > 10 ? `<div style="color: #888; text-align: center; padding-top: 10px;">... 还有 ${filesToDelete.length - 10} 个文件</div>` : ''}
+          </div>
+          <div class="confirm-buttons">
+            <button class="btn btn-cancel" onclick="closeDeleteConfirm()">再想想</button>
+            <button class="btn btn-danger" onclick="executeBatchDelete(${filesToDelete.length})">确认删除</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(confirmDialog);
+    }
+
+    // 关闭删除确认对话框
+    function closeDeleteConfirm() {
+      const dialog = document.querySelector('.confirm-dialog');
+      if (dialog) {
+        dialog.remove();
+      }
+    }
+
+    // 执行批量删除
+    async function executeBatchDelete(count) {
+      const indices = Array.from(selectedDuplicates);
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const index of indices) {
+        const group = duplicateFiles[index];
+        const result = await ipcRenderer.invoke('delete-file', group.duplicate.path);
+        if (result.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      }
+
+      closeDeleteConfirm();
+      
+      // 从列表中移除已删除的文件
+      if (successCount > 0) {
+        // 重新加载重复文件列表
+        setTimeout(() => {
+          findDuplicates();
+        }, 500);
+      }
+
+      showNotification(`删除完成：成功 ${successCount} 个，失败 ${failCount} 个`);
+    }
+
+    // 当前待删除的索引（用于确认对话框）
+    let pendingDeleteIndex = null;
+
+    // 单独删除一个重复文件
+    function deleteSingleDuplicate(index) {
+      const group = duplicateFiles[index];
+      if (!group) return;
+
+      pendingDeleteIndex = index;
+
+      // 创建确认对话框
+      const confirmDialog = document.createElement('div');
+      confirmDialog.id = 'delete-confirm-dialog';
+      confirmDialog.className = 'confirm-dialog';
+      confirmDialog.innerHTML = `
+        <div class="confirm-box" style="max-width: 400px;">
+          <div class="confirm-title">⚠️ 确认删除</div>
+          <div class="confirm-message">
+            确定要删除这个文件吗？<br>
+            <strong style="word-break: break-all;">${group.duplicate.name || path.basename(group.duplicate.path)}</strong>
+          </div>
+          <div class="confirm-buttons">
+            <button class="btn btn-cancel" data-confirm="cancel">取消</button>
+            <button class="btn btn-danger" data-confirm="delete">删除</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(confirmDialog);
+    }
+
+    // 确认单独删除
+    async function confirmSingleDelete(index) {
+      const group = duplicateFiles[index];
+      const result = await ipcRenderer.invoke('delete-file', group.duplicate.path);
+      
+      closeDeleteConfirm();
+      
+      if (result.success) {
+        showNotification('文件已删除');
+        duplicateFiles.splice(index, 1);
+        displayDuplicates();
+        updateSelectedCount();
+      } else {
+        showNotification('删除失败：' + result.error);
+      }
+    }
+
+    // 预览文件
+    async function previewFile(filePath) {
+      try {
+        await ipcRenderer.invoke('open-file', filePath);
+      } catch (err) {
+        showNotification('无法预览：' + err.message);
+      }
+    }
+
+    // 更新分类选项显示
+    function updateClassifyOptions() {
+      const selectedRule = document.querySelector('input[name="classifyRule"]:checked')?.value;
+      const timeOptions = document.getElementById('timeClassifyOptions');
+      const aiOptions = document.getElementById('aiClassifyOptions');
+      const customPatternInput = document.getElementById('customPatternInput');
+      
+      // 隐藏所有选项
+      if (timeOptions) timeOptions.style.display = 'none';
+      if (aiOptions) aiOptions.style.display = 'none';
+      if (customPatternInput) customPatternInput.style.display = 'none';
+      
+      // 显示对应选项
+      if (selectedRule === 'time' && timeOptions) {
+        timeOptions.style.display = 'block';
+      } else if (selectedRule === 'ai' && aiOptions) {
+        aiOptions.style.display = 'block';
+        
+        // 监听自定义模式选择
+        const aiNamingRadios = document.querySelectorAll('input[name="aiNaming"]');
+        aiNamingRadios.forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            if (customPatternInput) {
+              customPatternInput.style.display = e.target.value === 'custom-pattern' ? 'block' : 'none';
+            }
+          });
+        });
+      }
+    }
+
+    // AI 智能搜索功能
+    async function performAISearch() {
+      const searchInput = document.getElementById('aiSearchInput');
+      const query = searchInput.value.trim();
+
+      if (!query) {
+        showNotification('请输入搜索描述');
+        return;
+      }
+
+      if (scannedFiles.length === 0) {
+        showNotification('请先扫描文件');
+        return;
+      }
+
+      const resultsDiv = document.getElementById('aiSearchResults');
+      const resultsList = document.getElementById('aiSearchResultsList');
+
+      resultsDiv.style.display = 'block';
+      resultsList.innerHTML = '<div style="text-align: center; padding: 20px;">🔍 正在使用 AI 理解您的搜索意图...</div>';
+
+      try {
+        // 检查 CLIP 模型是否可用
+        const models = await ipcRenderer.invoke('get-model-status');
+        const hasCLIP = models.CLIP?.installed;
+
+        // 模拟搜索结果（实际实现需要调用 AI 模型）
+        // 这里先显示一个提示，说明功能需要模型支持
+        let html = '';
+
+        if (!hasCLIP) {
+          html += `
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px; color: #856404;">
+              <strong>⚠️ 需要 CLIP 模型</strong><br>
+              要使用图片内容搜索功能，请先下载 CLIP 模型。
+              <button class="btn btn-primary" onclick="showTab('settings-tab')" style="margin-top: 10px;">
+                前往设置下载
+              </button>
+            </div>
+          `;
+        }
+
+        html += `
+          <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; color: #2e7d32;">
+            <strong>📝 搜索查询：</strong> "${query}"<br>
+            <strong>📊 扫描文件数：</strong> ${scannedFiles.length} 个文件<br>
+            <br>
+            <em>💡 此功能正在开发中，完整版将支持：</em>
+            <ul style="margin-top: 8px; padding-left: 20px;">
+              <li>使用 CLIP 模型理解图片内容</li>
+              <li>使用 Embedding 模型理解文档语义</li>
+              <li>根据自然语言描述匹配相关文件</li>
+            </ul>
+          </div>
+        `;
+
+        resultsList.innerHTML = html;
+
+      } catch (err) {
+        console.error('AI 搜索错误:', err);
+        resultsList.innerHTML = `<div style="color: #dc3545; padding: 15px;">搜索出错：${err.message}</div>`;
+      }
+    }
+
+    // 开始 AI 分类（支持多种分类规则）
+    async function startClassification() {
+      if (scannedFiles.length === 0) {
+        showNotification('请先扫描文件');
+        return;
+      }
+
+      const btn = document.getElementById('classifyBtn');
+      btn.textContent = '分类中...';
+      btn.disabled = true;
+
+      // 获取用户选择的分类规则
+      const classifyRule = document.querySelector('input[name="classifyRule"]:checked')?.value || 'filetype';
+      const timeGrouping = document.querySelector('input[name="timeGrouping"]:checked')?.value || 'year-month';
+      const aiNaming = document.querySelector('input[name="aiNaming"]:checked')?.value || 'descriptive';
+      const customPattern = document.getElementById('customPattern')?.value || '';
+
+      console.log('[分类] 使用规则:', { classifyRule, timeGrouping, aiNaming, customPattern });
+
+      const categoryStats = {
+        software: 0,
+        font: 0,
+        image: 0,
+        music: 0,
+        video: 0,
+        other: 0
+      };
+
+      const classifiedFiles = [];
+
+      try {
+        for (let i = 0; i < scannedFiles.length; i++) {
+          const file = scannedFiles[i];
+          let result;
+          
+          // 根据选择的规则进行分类
+          if (classifyRule === 'filetype') {
+            // 按文件类型分类（使用本地 LLM）
+            result = await ipcRenderer.invoke('classify-file', file.name, file.size);
+          } else if (classifyRule === 'time') {
+            // 按时间分类
+            result = classifyByTime(file, timeGrouping);
+          } else if (classifyRule === 'ai') {
+            // AI 智能建议
+            result = await classifyByAI(file, aiNaming, customPattern);
+          }
+          
+          file.category = result.category;
+          file.suggestedFolder = result.suggestedFolder; // 建议的文件夹名称
+          classifiedFiles.push(file);
+          
+          // 更新统计
+          switch (result.category) {
+            case '软件': categoryStats.software++; break;
+            case '字体': categoryStats.font++; break;
+            case '图片': categoryStats.image++; break;
+            case '音乐': categoryStats.music++; break;
+            case '电影': categoryStats.video++; break;
+            default: categoryStats.other++;
+          }
+          
+          // 每 10 个文件更新一次 UI
+          if (i % 10 === 0) {
+            updateCategoryStats(categoryStats);
+          }
+        }
+
+        updateCategoryStats(categoryStats);
+        displayClassifiedFiles(classifiedFiles);
+        
+        const ruleNames = {
+          'filetype': '文件类型',
+          'time': '时间',
+          'ai': 'AI 智能'
+        };
+        showNotification(`分类完成，共处理 ${classifiedFiles.length} 个文件（${ruleNames[classifyRule]}规则）`);
+
+      } catch (err) {
+        showNotification('分类失败：' + err.message);
+        console.error('[分类] 错误:', err);
+      } finally {
+        btn.textContent = '开始智能分类';
+        btn.disabled = false;
+      }
+    }
+
+    // 按时间分类（本地规则，无需 AI）
+    function classifyByTime(file, timeGrouping) {
+      const dateStr = file.modifiedTime || file.createdTime;
+      if (!dateStr) {
+        return { category: '其他', suggestedFolder: '未分类' };
+      }
+      
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      let folderName;
+      let category;
+      
+      if (timeGrouping === 'year-month') {
+        folderName = `${year}-${month}`;
+        category = '其他'; // 时间分类统一归为"其他"
+      } else if (timeGrouping === 'year') {
+        folderName = `${year}`;
+        category = '其他';
+      } else if (timeGrouping === 'created-date') {
+        folderName = `${year}-${month}-${day}`;
+        category = '其他';
+      } else {
+        folderName = '未分类';
+        category = '其他';
+      }
+      
+      return { category, suggestedFolder: folderName };
+    }
+
+    // AI 智能分类（调用本地 LLM）
+    async function classifyByAI(file, aiNaming, customPattern) {
+      try {
+        // 使用本地 LLM 分析文件名和扩展名
+        const baseResult = await ipcRenderer.invoke('classify-file', file.name, file.size);
+        
+        let suggestedFolder;
+        
+        if (aiNaming === 'descriptive') {
+          // 描述性命名
+          suggestedFolder = generateDescriptiveFolderName(file, baseResult);
+        } else if (aiNaming === 'project-based') {
+          // 项目导向命名
+          suggestedFolder = generateProjectFolderName(file, baseResult);
+        } else if (aiNaming === 'custom-pattern' && customPattern) {
+          // 自定义模式
+          suggestedFolder = applyCustomPattern(file, baseResult, customPattern);
+        } else {
+          suggestedFolder = baseResult.category;
+        }
+        
+        return {
+          category: baseResult.category,
+          suggestedFolder
+        };
+      } catch (err) {
+        console.error('[AI 分类] 失败:', err);
+        return { category: '其他', suggestedFolder: '未分类' };
+      }
+    }
+
+    // 生成描述性文件夹名
+    function generateDescriptiveFolderName(file, baseResult) {
+      const ext = path.extname(file.name).toLowerCase().slice(1);
+      const name = file.name.toLowerCase();
+      
+      // 基于文件名关键词判断
+      if (name.includes('合同') || name.includes('协议') || name.includes('发票')) {
+        return '工作文档';
+      } else if (name.includes('照片') || name.includes('自拍') || name.includes('旅游')) {
+        return '个人照片';
+      } else if (name.includes('报告') || name.includes('总结') || name.includes('计划')) {
+        return '工作报告';
+      } else if (name.includes('教程') || name.includes('学习') || name.includes('课程')) {
+        return '学习资料';
+      } else if (name.includes('安装') || name.includes('setup') || name.includes('installer')) {
+        return '安装程序';
+      }
+      
+      // 默认使用类别
+      return baseResult.category || '未分类';
+    }
+
+    // 生成项目导向文件夹名
+    function generateProjectFolderName(file, baseResult) {
+      const name = file.name.toLowerCase();
+      
+      // 尝试从文件名提取项目名（假设项目名在文件名开头或下划线前）
+      const match = name.match(/^([a-z0-9_-]+)[-_]/i);
+      if (match) {
+        return `Project-${match[1].toUpperCase()}`;
+      }
+      
+      // 使用前缀 + 类别
+      const prefix = 'P' + Math.floor(Math.random() * 100);
+      return `${prefix}_${baseResult.category}`;
+    }
+
+    // 应用自定义命名模式
+    function applyCustomPattern(file, baseResult, pattern) {
+      const ext = path.extname(file.name).toLowerCase().slice(1);
+      const nameWithoutExt = path.basename(file.name, path.extname(file.name));
+      const date = file.modifiedTime ? new Date(file.modifiedTime) : new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      // 替换占位符
+      return pattern
+        .replace('{类别}', baseResult.category)
+        .replace('{扩展名}', ext)
+        .replace('{文件名}', nameWithoutExt)
+        .replace('{年}', year)
+        .replace('{月}', month)
+        .replace('{日}', day)
+        .replace('{日期}', `${year}-${month}-${day}`);
+    }
+
+    // 更新分类统计
+    function updateCategoryStats(stats) {
+      document.getElementById('catSoftware').textContent = stats.software;
+      document.getElementById('catFont').textContent = stats.font;
+      document.getElementById('catImage').textContent = stats.image;
+      document.getElementById('catMusic').textContent = stats.music;
+      document.getElementById('catVideo').textContent = stats.video;
+      document.getElementById('catOther').textContent = stats.other;
+    }
+
+    // 显示分类文件
+    function displayClassifiedFiles(files) {
+      const list = document.getElementById('classList');
+      
+      const categories = ['软件', '字体', '图片', '音乐', '电影', '其他'];
+      const badgeClasses = ['badge-software', 'badge-font', 'badge-image', 'badge-music', 'badge-video', 'badge-other'];
+      
+      // 按分类规则分组显示（如果选择了时间或 AI 分类，则按建议文件夹分组）
+      const classifyRule = document.querySelector('input[name="classifyRule"]:checked')?.value || 'filetype';
+      
+      if (classifyRule === 'time' || classifyRule === 'ai') {
+        // 按建议的文件夹分组
+        const folderGroups = {};
+        files.forEach(f => {
+          const folder = f.suggestedFolder || '未分类';
+          if (!folderGroups[folder]) {
+            folderGroups[folder] = [];
+          }
+          folderGroups[folder].push(f);
+        });
+        
+        list.innerHTML = Object.entries(folderGroups).map(([folder, folderFiles]) => {
+          return `
+            <div style="margin-bottom: 20px;">
+              <h3 style="margin-bottom: 10px;">
+                <span class="badge badge-primary">📁 ${folder}</span>
+                <span style="color: #999; font-size: 0.9em;">(${folderFiles.length} 个文件)</span>
+              </h3>
+              <div class="file-list" style="max-height: 200px;">
+                ${folderFiles.slice(0, 20).map(f => `
+                  <div class="file-item">
+                    <div class="file-info">
+                      <div class="file-name">${f.name}</div>
+                      <div class="file-meta">${formatSize(f.size)} · ${f.category}</div>
+                    </div>
+                  </div>
+                `).join('')}
+                ${folderFiles.length > 20 ? `<p style="text-align: center; color: #999;">还有 ${folderFiles.length - 20} 个文件...</p>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        // 按传统类别分组
+        list.innerHTML = categories.map((cat, idx) => {
+          const catFiles = files.filter(f => f.category === cat);
+          if (catFiles.length === 0) return '';
+          
+          return `
+            <div style="margin-bottom: 20px;">
+              <h3 style="margin-bottom: 10px;">
+                <span class="badge ${badgeClasses[idx]}">${cat}</span>
+                <span style="color: #999; font-size: 0.9em;">(${catFiles.length} 个文件)</span>
+              </h3>
+              <div class="file-list" style="max-height: 200px;">
+                ${catFiles.slice(0, 20).map(f => `
+                  <div class="file-item">
+                    <div class="file-info">
+                      <div class="file-name">${f.name}</div>
+                      <div class="file-meta">${formatSize(f.size)}</div>
+                    </div>
+                  </div>
+                `).join('')}
+                ${catFiles.length > 20 ? `<p style="text-align: center; color: #999;">还有 ${catFiles.length - 20} 个文件...</p>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // 显示文件列表
+    function displayFileList(files) {
+      const list = document.getElementById('fileList');
+      list.innerHTML = files.map(f => `
+        <div class="file-item">
+          <div class="file-info">
+            <div class="file-name">${f.name}</div>
+            <div class="file-meta">${f.extension} · ${formatSize(f.size)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 工具函数
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) {
+        return '未知';
+      }
+
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return '无效日期';
+        }
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      } catch (err) {
+        return '日期格式错误';
+      }
+    }
+
+    // 格式化路径显示（缩短过长路径）
+    function formatPath(filePath) {
+      if (!filePath) return '';
+
+      // 只显示文件名和父目录
+      const basename = path.basename(filePath);
+      const dirname = path.dirname(filePath);
+
+      // 如果路径很短，直接显示
+      if (filePath.length <= 40) {
+        return filePath;
+      }
+
+      // 显示父目录的最后一部分 + 文件名
+      const parentDir = path.basename(dirname);
+      const shortened = `.../${parentDir}/${basename}`;
+
+      // 如果还是太长，只显示文件名
+      if (shortened.length > 40) {
+        if (basename.length > 35) {
+          return basename.substring(0, 15) + '...' + basename.substring(basename.length - 15);
+        }
+        return basename;
+      }
+
+      return shortened;
+    }
+
+    // 获取文件类型图标
+    function getFileTypeIcon(filePath) {
+      const ext = path.extname(filePath).toLowerCase().slice(1);
+      const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico'];
+      const videoExts = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv'];
+      const musicExts = ['mp3', 'wav', 'flac', 'aac', 'ogg'];
+      const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'md'];
+      const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz'];
+      
+      if (imageExts.includes(ext)) return '🖼️';
+      if (videoExts.includes(ext)) return '🎬';
+      if (musicExts.includes(ext)) return '🎵';
+      if (docExts.includes(ext)) return '📄';
+      if (archiveExts.includes(ext)) return '📦';
+      if (ext === 'exe') return '💿';
+      return '📁';
+    }
+
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // ========== AI 引擎设置功能 ==========
+    let currentMode = 'BALANCED';
+    let hardwareInfo = null;
+    let currentDownload = null; // 当前下载任务
+
+    // 监听下载进度
+    ipcRenderer.on('download-progress', (event, progress) => {
+      updateDownloadProgress(progress);
+    });
+
+    // 处理模型操作（下载/加载/卸载）
+    async function handleModelAction(modelKey) {
+      console.log('[UI] 处理模型操作:', modelKey);
+
+      const elements = getModelProperty(modelKey);
+      const btn = elements.btn;
+      const status = elements.status;
+
+      if (!btn) {
+        const errorMsg = `找不到按钮元素：${modelKey}`;
+        console.error('[UI Error]', errorMsg);
+        showNotification('UI 错误：' + errorMsg);
+        return;
+      }
+
+      if (!status) {
+        const errorMsg = `找不到状态元素：${modelKey}`;
+        console.error('[UI Error]', errorMsg);
+        showNotification('UI 错误：' + errorMsg);
+        return;
+      }
+
+      try {
+        // 检查模型是否已安装
+        const models = await ipcRenderer.invoke('get-model-status');
+        const model = models[modelKey];
+
+        console.log('[UI] 模型状态:', modelKey, model);
+
+        if (!model.installed) {
+          // 未安装，开始自动下载
+          console.log('[UI] 开始下载模型:', modelKey);
+          await downloadModel(modelKey);
+        } else if (model.loaded) {
+          // 已加载，卸载
+          console.log('[UI] 卸载模型:', modelKey);
+          await toggleModelLoad(modelKey, false);
+        } else {
+          // 已安装但未加载，加载
+          console.log('[UI] 加载模型:', modelKey);
+          await toggleModelLoad(modelKey, true);
+        }
+      } catch (err) {
+        console.error('[UI Error] 操作失败:', err);
+        showNotification('操作失败：' + (err?.message || '未知错误'));
+        // 下载失败时打开帮助页面
+        if (err?.message?.includes('下载') || err?.message?.includes('download')) {
+          setTimeout(() => {
+            ipcRenderer.invoke('show-download-help');
+          }, 500);
+        }
+      }
+    }
+
+    // 获取模型相关的 DOM 元素
+    function getModelProperty(modelKey, type) {
+      const mapping = {
+        'EMBEDDING': { btn: 'embedBtn', status: 'embeddingStatus' },
+        'CLIP': { btn: 'clipBtn', status: 'clipStatus' },
+        'LLM': { btn: 'llmBtn', status: 'llmStatus' }
+      };
+
+      const props = mapping[modelKey];
+      if (!props) {
+        console.error(`[getModelProperty] 未知模型：${modelKey}`);
+        return type ? null : { btn: null, status: null };
+      }
+
+      if (type === 'btn') {
+        return document.getElementById(props.btn);
+      } else if (type === 'status') {
+        return document.getElementById(props.status);
+      }
+
+      // 返回包含 DOM 元素的对象
+      return {
+        btn: document.getElementById(props.btn),
+        status: document.getElementById(props.status)
+      };
+    }
+
+    // 下载模型
+    async function downloadModel(modelKey) {
+      const btn = getModelProperty(modelKey, 'btn');
+      const status = getModelProperty(modelKey, 'status');
+
+      if (!btn || !status) {
+        showNotification('UI 元素未找到：' + modelKey);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '下载中...';
+      status.textContent = '正在连接服务器...';
+      status.style.color = '#888';
+
+      // 显示进度条
+      const progressDiv = document.getElementById('downloadProgress');
+      progressDiv.style.display = 'block';
+      document.getElementById('downloadTitle').textContent = `正在下载 ${getModelName(modelKey)}...`;
+
+      // 重置进度条
+      updateDownloadProgress({
+        percent: 0,
+        speedFormatted: '0 KB/s',
+        eta: 0
+      });
+
+      let progressHandler = null;
+
+      try {
+        console.log('[UI] 开始下载模型:', modelKey);
+
+        // 监听 IPC 事件
+        progressHandler = (event, progress) => {
+          // 只处理当前模型的进度
+          if (progress.modelId === modelKey) {
+            console.log('[UI] 收到进度更新:', progress.percent + '%', progress.speedFormatted);
+            updateDownloadProgress(progress);
+            if (status) {
+              status.textContent = `下载中... ${progress.percent}% (${progress.speedFormatted})`;
+            }
+          }
+        };
+
+        ipcRenderer.on('download-progress', progressHandler);
+
+        const result = await ipcRenderer.invoke('download-model', modelKey);
+
+        // 移除监听器
+        if (progressHandler) {
+          ipcRenderer.removeListener('download-progress', progressHandler);
+        }
+
+        // 下载完成
+        progressDiv.style.display = 'none';
+        console.log('[UI] 下载完成:', result);
+
+        if (result.alreadyInstalled) {
+          showNotification(`${getModelName(modelKey)} 已存在，无需下载`);
+          // 直接加载模型
+          await toggleModelLoad(modelKey, true);
+        } else {
+          showNotification(`${getModelName(modelKey)} 下载完成！`);
+          // 自动加载模型
+          await toggleModelLoad(modelKey, true);
+        }
+      } catch (err) {
+        progressDiv.style.display = 'none';
+        console.error('[UI] 下载失败:', err);
+
+        // 移除监听器
+        if (progressHandler) {
+          ipcRenderer.removeListener('download-progress', progressHandler);
+        }
+
+        // 安全获取错误消息
+        let errorMsg = '未知错误';
+        if (err && err.message) {
+          errorMsg = err.message;
+        } else if (typeof err === 'string') {
+          errorMsg = err;
+        } else if (err) {
+          errorMsg = JSON.stringify(err);
+        }
+
+        // 显示详细的错误信息
+        if (errorMsg.includes('404')) {
+          errorMsg = '模型文件不存在或 URL 错误';
+        } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
+          errorMsg = '无法访问下载服务器，请检查网络或使用代理';
+        } else if (errorMsg.includes('ETIMEDOUT') || errorMsg.includes('timeout')) {
+          errorMsg = '下载超时，请检查网络连接';
+        } else if (errorMsg.includes('ENOTFOUND')) {
+          errorMsg = '无法解析域名，请检查 DNS 设置';
+        } else if (errorMsg.includes('ECONNREFUSED')) {
+          errorMsg = '连接被拒绝，服务器可能不可用';
+        }
+
+        showNotification('下载失败：' + errorMsg);
+        btn.textContent = '重试';
+        status.textContent = '下载失败';
+        status.style.color = '#FF6961';
+
+        // 弹出友好的帮助窗口
+        setTimeout(() => {
+          ipcRenderer.invoke('show-download-help');
+        }, 500);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // 获取模型名称
+    function getModelName(modelKey) {
+      const names = {
+        'EMBEDDING': '文档向量化模型',
+        'CLIP': '图片理解模型',
+        'LLM': '语言模型'
+      };
+      return names[modelKey] || modelKey;
+    }
+
+    // 更新下载进度
+    function updateDownloadProgress(progress) {
+      const progressBar = document.getElementById('progressBarFill');
+      const percentSpan = document.getElementById('progressPercent');
+      const speedSpan = document.getElementById('progressSpeed');
+      const etaSpan = document.getElementById('progressETA');
+      
+      progressBar.style.width = `${progress.percent}%`;
+      percentSpan.textContent = `${progress.percent}%`;
+      speedSpan.textContent = `${progress.speedFormatted}`;
+      
+      const etaSeconds = parseInt(progress.eta);
+      if (etaSeconds > 60) {
+        etaSpan.textContent = `剩余时间：${(etaSeconds / 60).toFixed(1)}分钟`;
+      } else {
+        etaSpan.textContent = `剩余时间：${etaSeconds}秒`;
+      }
+    }
+
+    // 取消下载
+    function cancelDownload() {
+      // TODO: 实现取消逻辑
+      showNotification('下载取消功能开发中...');
+    }
+
+    // 切换模型加载状态
+    async function toggleModelLoad(modelKey, load) {
+      const btn = getModelProperty(modelKey, 'btn');
+      const status = getModelProperty(modelKey, 'status');
+
+      if (!btn || !status) {
+        showNotification('UI 元素未找到：' + modelKey);
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = load ? '加载中...' : '卸载中...';
+
+        console.log(`[UI] 调用toggle-model: ${modelKey}, load=${load}`);
+        const result = await ipcRenderer.invoke('toggle-model', modelKey);
+        console.log('[UI] toggle-model返回:', result);
+
+        // 直接使用返回的状态更新UI
+        if (result) {
+          updateModelUI(modelKey, result);
+        } else {
+          // 如果返回为空，重新查询状态
+          const models = await ipcRenderer.invoke('get-model-status');
+          updateModelUI(modelKey, models[modelKey]);
+        }
+      } catch (err) {
+        console.error('[UI] 切换模型状态失败:', err);
+        showNotification('操作失败：' + err.message);
+        // 恢复按钮状态
+        const models = await ipcRenderer.invoke('get-model-status');
+        updateModelUI(modelKey, models[modelKey]);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // 更新模型 UI 状态
+    function updateModelUI(modelKey, model) {
+      console.log(`[UI] updateModelUI called for ${modelKey}:`, model);
+      
+      const elements = getModelProperty(modelKey);
+      const btn = elements.btn;
+      const status = elements.status;
+      
+      // 检查 UI 元素是否存在
+      if (!btn || !status) {
+        console.error(`[UI Error] 找不到模型元素：${modelKey}`);
+        console.error('  elements:', elements);
+        return;
+      }
+      
+      // 更新文件大小显示
+      const sizeElementId = modelKey.toLowerCase() + 'Size';
+      const sizeElement = document.getElementById(sizeElementId);
+      console.log(`[UI] 查找文件大小元素: #${sizeElementId}, 找到:`, !!sizeElement);
+      if (sizeElement && model.actualSize) {
+        sizeElement.textContent = model.actualSize;
+        console.log(`[UI] 更新文件大小: ${model.actualSize}`);
+      }
+      
+      // 更新状态和按钮
+      console.log(`[UI] 设置状态: installed=${model.installed}, loaded=${model.loaded}`);
+      
+      if (!model.installed) {
+        status.textContent = '未安装';
+        status.style.color = '#888';
+        btn.textContent = '下载';
+      } else if (model.loaded) {
+        status.textContent = '已加载';
+        status.style.color = 'var(--mint)';
+        btn.textContent = '卸载';
+      } else {
+        status.textContent = '已安装';
+        status.style.color = 'var(--sky)';
+        btn.textContent = '加载';
+      }
+      
+      console.log(`[UI] ${modelKey} UI更新完成: 状态="${status.textContent}", 按钮="${btn.textContent}"`);
+    }
+
+    // 初始化硬件探测
+    async function initHardwareProbe() {
+      try {
+        const result = await ipcRenderer.invoke('probe-hardware');
+        hardwareInfo = result;
+        
+        // 更新 UI
+        document.getElementById('cpuInfo').textContent = 
+          `${result.cpu.model} (${result.cpu.cores}核心)`;
+        document.getElementById('memoryInfo').textContent = 
+          `${(result.memory.total / 1024 / 1024 / 1024).toFixed(1)}GB (可用 ${(result.memory.available / 1024 / 1024 / 1024).toFixed(1)}GB)`;
+        document.getElementById('gpuInfo').textContent = 
+          result.gpu.model || '集成显卡/无';
+        document.getElementById('instructionInfo').textContent = 
+          result.instructions.join(', ') || '基础指令集';
+        
+        // 显示推荐模式
+        showRecommendedMode(result.recommendedMode);
+        
+        // 如果自动模式启用，自动选择
+        if (document.getElementById('autoMode').checked) {
+          selectAIMode(result.recommendedMode);
+        }
+      } catch (err) {
+        console.error('硬件探测失败:', err);
+        document.getElementById('cpuInfo').textContent = '探测失败';
+      }
+    }
+
+    // 显示推荐模式
+    function showRecommendedMode(mode) {
+      // 清除所有推荐标记
+      document.querySelectorAll('.mode-badge').forEach(el => el.style.display = 'none');
+      
+      // 显示推荐
+      const badgeId = mode.toLowerCase().replace('_', '') + 'Rec';
+      const badge = document.getElementById(badgeId);
+      if (badge) {
+        badge.style.display = 'block';
+      }
+    }
+
+    // 选择 AI 模式
+    function selectAIMode(mode) {
+      currentMode = mode;
+      
+      // 更新 UI 选中状态
+      document.querySelectorAll('.mode-card').forEach(card => {
+        card.classList.remove('selected');
+        if (card.dataset.mode === mode) {
+          card.classList.add('selected');
+        }
+      });
+      
+      showNotification(`已切换到 ${getModeDescription(mode)}`);
+    }
+
+    // 获取模式描述
+    function getModeDescription(mode) {
+      const descriptions = {
+        'FULL_AI': '完全 AI 模式',
+        'BALANCED': '平衡模式',
+        'LITE': '极速模式',
+        'MINIMAL': '基础模式'
+      };
+      return descriptions[mode] || mode;
+    }
+
+    // 切换自动模式
+    function toggleAutoMode() {
+      const autoMode = document.getElementById('autoMode').checked;
+      
+      if (autoMode && hardwareInfo) {
+        selectAIMode(hardwareInfo.recommendedMode);
+        showNotification('已根据硬件配置自动选择最佳模式');
+      }
+    }
+
+    // 保存 AI 设置
+    function saveAISettings() {
+      const settings = {
+        mode: currentMode,
+        autoMode: document.getElementById('autoMode').checked,
+        lazyLoad: document.getElementById('lazyLoad').checked,
+        backgroundPreprocess: document.getElementById('backgroundPreprocess').checked
+      };
+      
+      localStorage.setItem('aiSettings', JSON.stringify(settings));
+      showNotification('AI 配置已保存');
+    }
+
+    // 恢复默认
+    function resetToDefault() {
+      document.getElementById('autoMode').checked = true;
+      document.getElementById('lazyLoad').checked = true;
+      document.getElementById('backgroundPreprocess').checked = false;
+      
+      if (hardwareInfo) {
+        selectAIMode(hardwareInfo.recommendedMode);
+      } else {
+        selectAIMode('BALANCED');
+      }
+      
+      showNotification('已恢复默认配置');
+    }
+
+    // 显示二维码弹窗
+    function showQRCode(type) {
+      const modal = document.getElementById('qrModal');
+      const title = document.getElementById('qrTitle');
+      const image = document.getElementById('qrImage');
+
+      if (type === 'wechat') {
+        title.textContent = '微信支付 - 赞助开发者';
+        image.src = 'assets/wechat-pay.png';
+      } else {
+        title.textContent = '支付宝 - 赞助开发者';
+        image.src = 'assets/alipay.jpg';
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    // 关闭二维码弹窗
+    function closeQRCode() {
+      document.getElementById('qrModal').style.display = 'none';
+    }
+
+    // 点击弹窗背景关闭
+    document.getElementById('qrModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeQRCode();
+      }
+    });
+
+    // 加载保存的 AI 设置
+    function loadSavedAISettings() {
+      const saved = localStorage.getItem('aiSettings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        document.getElementById('autoMode').checked = settings.autoMode;
+        document.getElementById('lazyLoad').checked = settings.lazyLoad;
+        document.getElementById('backgroundPreprocess').checked = settings.backgroundPreprocess;
+        
+        if (settings.mode) {
+          selectAIMode(settings.mode);
+        }
+      }
+    }
+
+    // 初始化 AI 引擎设置
+    async function initAISettings() {
+      await initHardwareProbe();
+      loadSavedAISettings();
+      await refreshModelStatus();
+      console.log('[UI] AI设置初始化完成');
+    }
+
+    // 等待DOM加载完成后初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAISettings);
+    } else {
+      // DOM已经加载完成
+      initAISettings();
+    }
+
+    // 刷新模型状态
+    async function refreshModelStatus() {
+      try {
+        console.log('[UI] 正在获取模型状态...');
+        const models = await ipcRenderer.invoke('get-model-status');
+        console.log('[UI] 获取到模型状态:', models);
+
+        for (const [modelKey, model] of Object.entries(models)) {
+          console.log(`[UI] 更新模型 ${modelKey}:`, model);
+          updateModelUI(modelKey, model);
+        }
+        console.log('[UI] 模型状态刷新完成');
+      } catch (err) {
+        console.error('[UI] 获取模型状态失败:', err);
+      }
+    }
+
+    // ========== 预览弹窗功能 ==========
+    let previewModal = null;
+    let previewImg = null;
+    let currentZoom = 1;
+    let currentTranslateX = 0;
+    let currentTranslateY = 0;
+
+    function initPreviewModal() {
+      // 创建弹窗 HTML
+      const modalHTML = `
+        <div id="preview-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; cursor: zoom-out;" onclick="closePreviewModal()">
+          <div style="position: absolute; top: 20px; right: 30px; font-size: 40px; color: white; cursor: pointer; z-index: 10001;" onclick="closePreviewModal()">×</div>
+          <div style="position: absolute; top: 20px; left: 30px; color: white; font-size: 14px; max-width: 600px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="preview-file-path"></div>
+          <div style="display: flex; justify-content: center; align-items: center; height: 100%; overflow: auto;">
+            <img id="preview-image-element" src="" style="max-width: 90%; max-height: 90%; object-fit: contain; transition: transform 0.2s;" onclick="event.stopPropagation(); toggleZoom(event)" ondblclick="event.stopPropagation(); resetZoom()">
+          </div>
+          <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px;">
+            🖱️ 单击放大 | 🔄 双击还原 | ❌ 点击右上角关闭
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      previewModal = document.getElementById('preview-modal');
+      previewImg = document.getElementById('preview-image-element');
+    }
+
+    function showPreviewModal(imagePath, filePath) {
+      if (!previewModal) {
+        initPreviewModal();
+      }
+      
+      console.log('[预览弹窗] 打开:', imagePath);
+      
+      // 加载缩略图或原图
+      ipcRenderer.invoke('get-full-image', imagePath)
+        .then(base64 => {
+          if (base64) {
+            previewImg.src = base64;
+            previewImg.style.display = 'block';
+            document.getElementById('preview-file-path').textContent = filePath || imagePath;
+            previewModal.style.display = 'block';
+            currentZoom = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+          } else {
+            console.error('[预览弹窗] 加载失败');
+            showNotification('图片加载失败');
+          }
+        })
+        .catch(err => {
+          console.error('[预览弹窗] 错误:', err);
+          showNotification('图片加载失败：' + err.message);
+        });
+    }
+
+    function closePreviewModal() {
+      if (previewModal) {
+        previewModal.style.display = 'none';
+        previewImg.src = '';
+      }
+    }
+
+    function toggleZoom(event) {
+      event.stopPropagation();
+      currentZoom = currentZoom === 1 ? 2 : 1;
+      previewImg.style.transform = `scale(${currentZoom}) translate(${currentTranslateX}px, ${currentTranslateY}px)`;
+    }
+
+    function resetZoom() {
+      currentZoom = 1;
+      currentTranslateX = 0;
+      currentTranslateY = 0;
+      previewImg.style.transform = 'scale(1)';
+    }
+
+    // 键盘 ESC 关闭弹窗
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && previewModal && previewModal.style.display === 'block') {
+        closePreviewModal();
+      }
+    });
+
+    // 初始化
+    initPreviewModal();
+
+    // 系统状态仪表盘更新
+    function updateSystemDashboard(stats) {
+      const dashboard = document.getElementById('systemDashboard');
+      if (!dashboard) return;
+
+      const html = `
+        <div style="display: flex; gap: 10px; align-items: center; font-size: 0.75em;">
+          <span title="扫描文件数">📁 ${stats.scanned || 0}</span>
+          <span title="精确重复">⚡ ${stats.exactDuplicates || 0}</span>
+          <span title="AI 分析">🤖 ${stats.aiAnalyzed || 0}</span>
+          <span style="color: ${stats.cpu > 80 ? '#e74c3c' : '#27ae60'};" title="CPU">
+            ⚙️ ${stats.cpu || 0}%
+          </span>
+          <span style="color: ${stats.memory > 80 ? '#e74c3c' : '#27ae60'};" title="内存">
+            💾 ${stats.memory || 0}%
+          </span>
+          <span style="color: ${stats.gpu > 80 ? '#e74c3c' : '#3498db'};" title="GPU">
+            🎮 ${stats.gpu || 0}%
+          </span>
+        </div>
+      `;
+      dashboard.innerHTML = html;
+    }
+
+    // 定期更新系统状态
+    setInterval(async () => {
+      try {
+        // 获取扫描统计
+        const status = await ipcRenderer.invoke('get-system-status');
+
+        // 获取实时CPU/内存/GPU使用率
+        const usage = await ipcRenderer.invoke('get-system-usage');
+
+        // 获取AI分析数量
+        const aiAnalyzed = window.aiAnalyzedCount || 0;
+        const aiProcessing = window.aiProcessing || 0;
+
+        // 合并数据并更新仪表盘
+        updateSystemDashboard({
+          ...status,
+          cpu: usage.cpu,
+          memory: usage.memory,
+          gpu: usage.gpu,
+          aiAnalyzed: aiAnalyzed,
+          aiProcessing: aiProcessing
+        });
+      } catch (err) {
+        // 忽略错误
+      }
+    }, 2000);
+  </script>
+
+  <!-- 系统状态仪表盘 -->
+  <div id="systemDashboard" style="
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 9999;
+    font-family: 'Microsoft YaHei', sans-serif;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0,0,0,0.05);
+  ">
+    <div style="display: flex; gap: 15px; align-items: center; font-size: 0.85em; color: #666;">
+      <span>📁 0</span>
+      <span>⚡ 0</span>
+      <span>🤖 0</span>
+      <span>💾 --</span>
+      <span>⚙️ --</span>
+    </div>
+  </div>
+</body>
+</html>

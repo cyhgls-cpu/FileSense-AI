@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模型下载帮助</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 1.1em;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .alert {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      color: #856404;
+    }
+
+    .alert strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .model-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s ease;
+    }
+
+    .model-card:hover {
+      border-color: #667eea;
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    .model-card h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .model-info {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+
+    .badge-size {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .badge-type {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+
+    .badge-recommend {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+
+    .download-links {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .download-link {
+      display: block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .download-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .download-link::after {
+      content: '📥 点击下载';
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .copy-url {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .copy-url input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85em;
+      background: #f8f9fa;
+    }
+
+    .copy-url button {
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .copy-url button:hover {
+      background: #218838;
+      transform: scale(1.05);
+    }
+
+    .step-list {
+      counter-reset: step;
+      list-style: none;
+      margin: 25px 0;
+    }
+
+    .step-list li {
+      position: relative;
+      padding-left: 50px;
+      margin-bottom: 20px;
+    }
+
+    .step-list li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 35px;
+      height: 35px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 35px;
+      font-weight: bold;
+    }
+
+    .step-list strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .tips {
+      background: #e3f2fd;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 25px;
+    }
+
+    .tips h4 {
+      color: #1976d2;
+      margin-bottom: 15px;
+    }
+
+    .tips ul {
+      list-style: none;
+    }
+
+    .tips li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+    }
+
+    .tips li::before {
+      content: '💡';
+      position: absolute;
+      left: 0;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .progress-tip {
+      text-align: center;
+      padding: 20px;
+      background: #fff3cd;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+
+    .check-model {
+      background: #d4edda;
+      border: 2px solid #c3e6cb;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    .check-model strong {
+      color: #155724;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .file-path {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85em;
+      color: #666;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 AI 模型下载帮助</h1>
+      <p>由于网络原因，自动下载可能失败。请手动下载模型文件。</p>
+    </div>
+
+    <div class="content">
+      <div class="alert">
+        <strong>⚠️ 为什么需要手动下载？</strong>
+        AI 模型文件较大，且托管平台（HuggingFace、ModelScope）经常需要登录或有访问限制。手动下载可以：
+        <ul style="margin-top: 8px; padding-left: 20px;">
+          <li>✅ 使用浏览器断点续传功能</li>
+          <li>✅ 避免下载超时失败</li>
+          <li>✅ 更可靠，可重复尝试</li>
+          <li>✅ 支持需要登录的模型仓库</li>
+        </ul>
+      </div>
+
+      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; color: #2e7d32;">
+        <strong>📥 推荐下载方式：</strong>
+        <ol style="margin-top: 8px; padding-left: 20px;">
+          <li>访问 ModelScope（国内）或 HuggingFace（国际）模型页面</li>
+          <li>找到需要的模型文件（.onnx 或 .gguf）</li>
+          <li>点击下载按钮或使用 git lfs 下载</li>
+          <li>将下载的文件重命名为正确名称，放入 models 文件夹</li>
+        </ol>
+      </div>
+
+      <h2 style="margin-bottom: 20px; color: #333;">📦 需要下载的模型</h2>
+
+      <!-- 模型 1 -->
+      <div class="model-card" id="card-EMBEDDING">
+        <h3>
+          <span>📝</span>
+          文档向量化模型 (EMBEDDING)
+          <span class="badge badge-recommend">⭐ 必装</span>
+          <span id="status-EMBEDDING" style="margin-left: auto; font-size: 0.85em;">检测中...</span>
+        </h3>
+        <div class="model-info">
+          <span class="badge badge-size">📏 22 MB</span>
+          <span class="badge badge-type">📄 BGE-Micro-v2</span>
+        </div>
+        <p style="color: #666; margin-bottom: 15px;">
+          用于文档语义分析和去重，体积最小，推荐优先安装。
+        </p>
+        
+        <div class="download-links">
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e74c3c; display: block; margin-bottom: 8px;">🇨🇳 国内加速镜像（推荐）：</strong>
+
+            <a href="https://hf-mirror.com/TaylorAI/bge-micro-v2/resolve/refs%2Fpr%2F2/onnx/model.onnx"
+               class="download-link"
+               style="background: linear-gradient(135deg, #e74c3c, #c0392b);"
+               download="bge-micro-v2.onnx">
+              📥 国内镜像下载（约 22MB）
+            </a>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #666; display: block; margin-bottom: 8px;">🌍 官方源（可能需要代理）：</strong>
+
+            <a href="https://huggingface.co/TaylorAI/bge-micro-v2/resolve/refs%2Fpr%2F2/onnx/model.onnx"
+               class="download-link"
+               style="background: linear-gradient(135deg, #3498db, #2980b9);"
+               download="bge-micro-v2.onnx">
+              📥 HuggingFace 官方下载
+            </a>
+
+            <a href="https://huggingface.co/TaylorAI/bge-micro-v2"
+               class="download-link"
+               style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);"
+               target="_blank">
+              🔗 打开 HuggingFace 模型页面
+            </a>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #666; display: block; margin-bottom: 8px;">📖 手动下载步骤：</strong>
+            <ol style="padding-left: 20px; color: #666; font-size: 0.9em;">
+              <li>点击"国内镜像下载"按钮（推荐）</li>
+              <li>或打开 HuggingFace 页面，找到 Files and versions 标签</li>
+              <li>进入 <code>onnx</code> 文件夹</li>
+              <li>下载 <code>model.onnx</code> 文件</li>
+              <li>将文件重命名为 <code>bge-micro-v2.onnx</code></li>
+            </ol>
+          </div>
+          
+          <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+            <strong style="font-size: 0.9em;">📋 复制国内镜像链接：</strong>
+            <div class="copy-url" style="margin-top: 8px;">
+              <input type="text" value="https://hf-mirror.com/TaylorAI/bge-micro-v2/resolve/refs%2Fpr%2F2/onnx/model.onnx" readonly id="url1">
+              <button onclick="copyUrl('url1', 'btn1')" id="btn1">📋 复制</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="check-model">
+          <strong>✅ 下载后操作：</strong>
+          <div class="file-path">将文件重命名为：<code>bge-micro-v2.onnx</code><br>
+          放到项目的 <code>models</code> 文件夹中</div>
+        </div>
+      </div>
+
+      <!-- 模型 2 -->
+      <div class="model-card" id="card-CLIP">
+        <h3>
+          <span>🖼️</span>
+          图片理解模型 (CLIP)
+          <span class="badge badge-recommend">👍 推荐</span>
+          <span id="status-CLIP" style="margin-left: auto; font-size: 0.85em;">检测中...</span>
+        </h3>
+        <div class="model-info">
+          <span class="badge badge-size">📏 578 MB</span>
+          <span class="badge badge-type">🖼️ CLIP-ViT-B-32</span>
+        </div>
+        <p style="color: #666; margin-bottom: 15px;">
+          用于图片内容理解和跨模态搜索（用文字搜图片）。
+        </p>
+        
+        <div class="download-links">
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e74c3c; display: block; margin-bottom: 8px;">🇨🇳 国内加速镜像（推荐）：</strong>
+
+            <a href="https://hf-mirror.com/sayantan47/clip-vit-b32-onnx/resolve/main/onnx/model.onnx"
+               class="download-link"
+               style="background: linear-gradient(135deg, #e74c3c, #c0392b);"
+               download="clip-vit-b-32.onnx">
+              📥 国内镜像下载（约 578MB）
+            </a>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #666; display: block; margin-bottom: 8px;">🌍 官方源（可能需要代理）：</strong>
+
+            <a href="https://huggingface.co/sayantan47/clip-vit-b32-onnx/resolve/main/onnx/model.onnx"
+               class="download-link"
+               style="background: linear-gradient(135deg, #3498db, #2980b9);"
+               download="clip-vit-b-32.onnx">
+              📥 HuggingFace 官方下载（约 578MB）
+            </a>
+
+            <a href="https://huggingface.co/sayantan47/clip-vit-b32-onnx"
+               class="download-link"
+               style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);"
+               target="_blank">
+              🔗 打开 HuggingFace 模型页面
+            </a>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #666; display: block; margin-bottom: 8px;">📖 手动下载步骤：</strong>
+            <ol style="padding-left: 20px; color: #666; font-size: 0.9em;">
+              <li>点击"国内镜像下载"按钮（推荐）</li>
+              <li>或打开 HuggingFace 页面，找到 Files and versions 标签</li>
+              <li>进入 <code>onnx</code> 文件夹</li>
+              <li>下载 <code>model.onnx</code> 文件</li>
+              <li>将文件重命名为 <code>clip-vit-b-32.onnx</code></li>
+            </ol>
+          </div>
+          
+          <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+            <strong style="font-size: 0.9em;">📋 复制国内镜像链接：</strong>
+            <div class="copy-url" style="margin-top: 8px;">
+              <input type="text" value="https://hf-mirror.com/sayantan47/clip-vit-b32-onnx/resolve/main/onnx/model.onnx" readonly id="url2">
+              <button onclick="copyUrl('url2', 'btn2')" id="btn2">📋 复制</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="check-model">
+          <strong>✅ 下载后操作：</strong>
+          <div class="file-path">将文件重命名为：<code>clip-vit-b-32.onnx</code><br>
+          放到项目的 <code>models</code> 文件夹中</div>
+        </div>
+      </div>
+
+      <!-- 模型 3 -->
+      <div class="model-card" id="card-LLM">
+        <h3>
+          <span>🧠</span>
+          语言模型 (LLM)
+          <span class="badge" style="background: #fff3cd; color: #856404;">⚡ 可选</span>
+          <span id="status-LLM" style="margin-left: auto; font-size: 0.85em;">检测中...</span>
+        </h3>
+        <div class="model-info">
+          <span class="badge badge-size">📏 986 MB</span>
+          <span class="badge badge-type">🧠 Qwen2.5-1.5B</span>
+        </div>
+        <p style="color: #666; margin-bottom: 15px;">
+          小型语言模型，用于智能文件分类和分析。体积较大，按需安装。
+        </p>
+        
+        <div class="download-links">
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e74c3c; display: block; margin-bottom: 8px;">🇨🇳 国内加速镜像（推荐）：</strong>
+
+            <a href="https://hf-mirror.com/enacimie/Qwen2.5-1.5B-Instruct-Q4_K_M-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m-00001-of-00001.gguf"
+               class="download-link"
+               style="background: linear-gradient(135deg, #e74c3c, #c0392b);"
+               download="qwen2.5-1.5b-instruct-q4_k_m.gguf">
+              📥 国内镜像下载（约 986MB）
+            </a>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #666; display: block; margin-bottom: 8px;">🌍 官方源（可能需要代理）：</strong>
+
+            <a href="https://huggingface.co/enacimie/Qwen2.5-1.5B-Instruct-Q4_K_M-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m-00001-of-00001.gguf"
+               class="download-link"
+               style="background: linear-gradient(135deg, #3498db, #2980b9);"
+               download="qwen2.5-1.5b-instruct-q4_k_m.gguf">
+              📥 HuggingFace 官方下载
+            </a>
+
+            <a href="https://huggingface.co/enacimie/Qwen2.5-1.5B-Instruct-Q4_K_M-GGUF"
+               class="download-link"
+               style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);"
+               target="_blank">
+              🔗 打开 HuggingFace 模型页面
+            </a>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #666; display: block; margin-bottom: 8px;">📖 手动下载步骤：</strong>
+            <ol style="padding-left: 20px; color: #666; font-size: 0.9em;">
+              <li>点击"国内镜像下载"按钮（推荐）</li>
+              <li>或打开 HuggingFace 页面，找到 Files and versions 标签</li>
+              <li>下载 <code>qwen2.5-1.5b-instruct-q4_k_m-00001-of-00001.gguf</code> 文件</li>
+              <li>将文件重命名为 <code>qwen2.5-1.5b-instruct-q4_k_m.gguf</code></li>
+            </ol>
+          </div>
+          
+          <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+            <strong style="font-size: 0.9em;">📋 复制国内镜像链接：</strong>
+            <div class="copy-url" style="margin-top: 8px;">
+              <input type="text" value="https://hf-mirror.com/enacimie/Qwen2.5-1.5B-Instruct-Q4_K_M-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m-00001-of-00001.gguf" readonly id="url3">
+              <button onclick="copyUrl('url3', 'btn3')" id="btn3">📋 复制</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="check-model">
+          <strong>✅ 下载后操作：</strong>
+          <div class="file-path">将文件重命名为：<code>qwen2.5-1.5b-instruct-q4_k_m.gguf</code><br>
+          放到项目的 <code>models</code> 文件夹中</div>
+        </div>
+      </div>
+
+      <h2 style="margin: 30px 0 20px; color: #333;">📝 详细步骤</h2>
+      
+      <ol class="step-list">
+        <li>
+          <strong>点击上方下载链接</strong>
+          <div style="color: #666;">浏览器会开始下载模型文件。如果链接打不开，可以复制下方的 URL 到浏览器。</div>
+        </li>
+        <li>
+          <strong>等待下载完成</strong>
+          <div style="color: #666;">大文件可能需要几分钟时间。浏览器支持断点续传，暂停后可以继续。</div>
+        </li>
+        <li>
+          <strong>重命名文件</strong>
+          <div style="color: #666;">按照每个模型卡片中的说明，将文件重命名为正确的名称。</div>
+        </li>
+        <li>
+          <strong>放到 models 文件夹</strong>
+          <div style="color: #666;">在项目根目录找到或创建 <code>models</code> 文件夹，放入重命名后的文件。</div>
+        </li>
+        <li>
+          <strong>重启应用并加载模型</strong>
+          <div style="color: #666;">重启智能文件整理助手，到"设置"标签页点击"加载"按钮即可使用。</div>
+        </li>
+      </ol>
+
+      <div class="tips">
+        <h4>💡 温馨提示</h4>
+        <ul>
+          <li>如果 HuggingFace 无法访问，可以尝试使用代理或加速器</li>
+          <li>推荐使用 Chrome、Edge 等现代浏览器下载</li>
+          <li>下载大文件时，确保磁盘空间充足</li>
+          <li>可以一次下载所有需要的模型，避免重复操作</li>
+          <li>下载完成后，在应用的"设置"页面可以看到模型状态</li>
+        </ul>
+      </div>
+
+      <div class="progress-tip">
+        <strong>🎯 推荐下载顺序：</strong><br>
+        1️⃣ 文档向量化模型 (22MB) → 2️⃣ 图片理解模型 (578MB) → 3️⃣ 语言模型 (986MB，可选)
+      </div>
+
+      <div class="button-group">
+        <a href="#" class="btn btn-primary" onclick="window.close(); return false;">✅ 我知道了</a>
+        <a href="#" class="btn btn-secondary" onclick="openModelsFolder(); return false;">📂 打开 models 文件夹</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    const fs = require('fs');
+    const path = require('path');
+
+    // 检查模型文件状态
+    async function checkModelStatus() {
+      const modelsDir = path.join(process.cwd(), 'models');
+
+      const models = [
+        { id: 'EMBEDDING', name: 'bge-micro-v2.onnx', size: 22 * 1024 * 1024 },
+        { id: 'CLIP', name: 'clip-vit-b-32.onnx', size: 150 * 1024 * 1024 },
+        { id: 'LLM', name: 'qwen2.5-1.5b-instruct-q4_k_m.gguf', size: 1.1 * 1024 * 1024 * 1024 }
+      ];
+
+      models.forEach(model => {
+        const modelPath = path.join(modelsDir, model.name);
+        const statusEl = document.getElementById(`status-${model.id}`);
+        const cardEl = document.getElementById(`card-${model.id}`);
+
+        if (fs.existsSync(modelPath)) {
+          const stats = fs.statSync(modelPath);
+          const sizeMB = (stats.size / 1024 / 1024).toFixed(1);
+          const expectedMB = (model.size / 1024 / 1024).toFixed(0);
+
+          // 检查文件是否完整（允许 5% 误差）
+          const isComplete = stats.size >= model.size * 0.95;
+
+          if (isComplete) {
+            statusEl.innerHTML = `<span style="color: #28a745;">✅ 已安装 (${sizeMB} MB)</span>`;
+            cardEl.style.borderColor = '#28a745';
+            cardEl.style.background = 'linear-gradient(135deg, #f8f9fa, #e8f5e9)';
+          } else {
+            statusEl.innerHTML = `<span style="color: #ffc107;">⚠️ 文件不完整 (${sizeMB}/${expectedMB} MB)</span>`;
+            cardEl.style.borderColor = '#ffc107';
+          }
+        } else {
+          statusEl.innerHTML = `<span style="color: #dc3545;">❌ 未安装</span>`;
+        }
+      });
+    }
+
+    function copyUrl(inputId, btnId) {
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+
+      if (!input || !btn) {
+        console.error('找不到输入框或按钮:', inputId, btnId);
+        return;
+      }
+
+      input.select();
+      input.setSelectionRange(0, 99999);
+
+      // 使用 Electron 的 clipboard API
+      try {
+        const { clipboard } = require('electron');
+        clipboard.writeText(input.value);
+
+        const originalText = btn.textContent;
+        btn.textContent = '✅ 已复制!';
+        btn.style.background = '#28a745';
+
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+        }, 2000);
+      } catch (err) {
+        console.error('复制失败:', err);
+
+        // 降级方案 - 使用 document.execCommand
+        try {
+          const success = document.execCommand('copy');
+          if (success) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ 已复制!';
+            btn.style.background = '#28a745';
+
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.style.background = '';
+            }, 2000);
+          } else {
+            alert('复制失败，请手动复制链接');
+          }
+        } catch (e) {
+          alert('复制失败，请手动复制链接');
+        }
+      }
+    }
+
+    function openModelsFolder() {
+      ipcRenderer.invoke('open-models-folder');
+    }
+
+    // 页面加载完成后检查模型状态
+    document.addEventListener('DOMContentLoaded', () => {
+      checkModelStatus();
+    });
+
+    // 每 5 秒刷新一次状态
+    setInterval(checkModelStatus, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+{
+  "name": "filesense-ai",
+  "version": "1.0.0",
+  "description": "FileSense AI (灵析) - AI驱动的本地文件智能整理助手",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --win --mac --linux",
+    "pack:win-portable": "electron-builder --win portable",
+    "pack:mac-zip": "electron-builder --mac zip",
+    "pack:linux-tar": "electron-builder --linux tar.gz"
+  },
+  "keywords": [
+    "file-organizer",
+    "duplicate-finder",
+    "ai-classification",
+    "local-ai",
+    "file-management"
+  ],
+  "author": "FileSense AI Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "mime-types": "^2.1.35",
+    "node-llama-cpp": "^3.0.0",
+    "sharp": "^0.33.5",
+    "sqlite3": "^5.1.7"
+  },
+  "build": {
+    "appId": "com.filesense.ai",
+    "productName": "FileSense AI",
+    "copyright": "Copyright © 2024 FileSense AI Team",
+    "directories": {
+      "output": "dist"
+    },
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/logo.ico",
+      "publisherName": "FileSense AI Team",
+      "verifyUpdateCodeSignature": false
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "index.html",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": ["!**/*.gguf", "!**/*.bin", "!**/models/**/*"]
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/sqlite3/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/logo.ico",
+      "publisherName": "FileSense AI Team",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/logo.ico",
+      "uninstallerIcon": "assets/logo.ico",
+      "installerHeaderIcon": "assets/logo.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FileSense AI",
+      "artifactName": "FileSense-AI-${version}-Windows-Setup-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "FileSense-AI-${version}-Windows-Portable-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/logo.icns",
+      "category": "public.app-category.utilities",
+      "artifactName": "FileSense-AI-${version}-macOS-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "FileSense AI ${version}",
+      "artifactName": "FileSense-AI-${version}-macOS-Installer-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/logo.png",
+      "category": "Utility",
+      "maintainer": "FileSense AI Team",
+      "vendor": "FileSense AI Team",
+      "synopsis": "AI驱动的本地文件智能整理助手",
+      "description": "基于本地AI引擎的文件整理工具，支持语义相似度分析和智能分类",
+      "artifactName": "FileSense-AI-${version}-Linux-${target}-${arch}.${ext}"
+    }
+  }
+}

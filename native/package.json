@@ -1,0 +1,38 @@
+{
+  "name": "@smart-file-organizer/native-scanner",
+  "version": "0.1.0",
+  "description": "High-performance Rust file scanner with N-API bindings",
+  "main": "index.js",
+  "scripts": {
+    "build": "cargo build --release && npm run move-binary",
+    "build:debug": "cargo build && npm run move-binary:debug",
+    "move-binary": "node scripts/move-binary.js",
+    "move-binary:debug": "node scripts/move-binary.js --debug",
+    "test": "cargo test && node test.js",
+    "clean": "cargo clean && rimraf *.node",
+    "install": "npm run build"
+  },
+  "keywords": [
+    "rust",
+    "file-scanner",
+    "napi",
+    "performance"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "rimraf": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "os": [
+    "win32",
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}
