@@ -161,7 +161,7 @@
       "vendor": "FileSense AI Team",
       "synopsis": "AI驱动的本地文件智能整理助手",
       "description": "基于本地AI引擎的文件整理工具，支持语义相似度分析和智能分类",
-      "artifactName": "FileSense-AI-${version}-Linux-${target}-${arch}.${ext}"
+      "artifactName": "FileSense-AI-${version}-Linux-${arch}.${ext}"
     }
   }
 }
