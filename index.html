@@ -3190,13 +3190,19 @@
     // 显示分类文件
     function displayClassifiedFiles(files) {
       const list = document.getElementById('classList');
-      
+
       const categories = ['软件', '字体', '图片', '音乐', '电影', '其他'];
       const badgeClasses = ['badge-software', 'badge-font', 'badge-image', 'badge-music', 'badge-video', 'badge-other'];
-      
+
       // 按分类规则分组显示（如果选择了时间或 AI 分类，则按建议文件夹分组）
       const classifyRule = document.querySelector('input[name="classifyRule"]:checked')?.value || 'filetype';
-      
+
+      // 保存分类结果供后续执行使用
+      window.lastClassifiedFiles = files;
+      window.lastClassifyRule = classifyRule;
+
+      let html = '';
+
       if (classifyRule === 'time' || classifyRule === 'ai') {
         // 按建议的文件夹分组
         const folderGroups = {};
@@ -3207,8 +3213,8 @@
           }
           folderGroups[folder].push(f);
         });
-        
-        list.innerHTML = Object.entries(folderGroups).map(([folder, folderFiles]) => {
+
+        html = Object.entries(folderGroups).map(([folder, folderFiles]) => {
           return `
             <div style="margin-bottom: 20px;">
               <h3 style="margin-bottom: 10px;">
@@ -3217,10 +3223,10 @@
               </h3>
               <div class="file-list" style="max-height: 200px;">
                 ${folderFiles.slice(0, 20).map(f => `
-                  <div class="file-item">
+                  <div class="file-item" title="${f.path || ''}">
                     <div class="file-info">
                       <div class="file-name">${f.name}</div>
-                      <div class="file-meta">${formatSize(f.size)} · ${f.category}</div>
+                      <div class="file-meta">${formatSize(f.size)} · ${f.category} · ${formatPath(f.path || '')}</div>
                     </div>
                   </div>
                 `).join('')}
@@ -3231,10 +3237,10 @@
         }).join('');
       } else {
         // 按传统类别分组
-        list.innerHTML = categories.map((cat, idx) => {
+        html = categories.map((cat, idx) => {
           const catFiles = files.filter(f => f.category === cat);
           if (catFiles.length === 0) return '';
-          
+
           return `
             <div style="margin-bottom: 20px;">
               <h3 style="margin-bottom: 10px;">
@@ -3243,10 +3249,10 @@
               </h3>
               <div class="file-list" style="max-height: 200px;">
                 ${catFiles.slice(0, 20).map(f => `
-                  <div class="file-item">
+                  <div class="file-item" title="${f.path || ''}">
                     <div class="file-info">
                       <div class="file-name">${f.name}</div>
-                      <div class="file-meta">${formatSize(f.size)}</div>
+                      <div class="file-meta">${formatSize(f.size)} · ${formatPath(f.path || '')}</div>
                     </div>
                   </div>
                 `).join('')}
@@ -3256,6 +3262,121 @@
           `;
         }).join('');
       }
+
+      // 添加确认执行按钮
+      html += `
+        <div style="margin-top: 20px; padding: 15px; background: rgba(255,183,197,0.2); border-radius: 10px; border: 2px dashed var(--macaron-pink);">
+          <h4 style="margin-bottom: 10px; color: var(--text);">📋 分类预览完成</h4>
+          <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
+            共 ${files.length} 个文件已分类。请确认是否执行以下操作：
+          </p>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="confirmAndExecuteClassification()">
+              ✅ 确认执行分类（创建文件夹并移动文件）
+            </button>
+            <button class="btn btn-secondary" onclick="cancelClassification()">
+              ❌ 取消
+            </button>
+          </div>
+          <p style="color: #999; font-size: 0.8em; margin-top: 10px;">
+            ⚠️ 注意：执行后文件将被移动到新的分类文件夹中，此操作不可撤销
+          </p>
+        </div>
+      `;
+
+      list.innerHTML = html;
+    }
+
+    // 确认并执行分类
+    async function confirmAndExecuteClassification() {
+      const files = window.lastClassifiedFiles;
+      const classifyRule = window.lastClassifyRule;
+
+      if (!files || files.length === 0) {
+        showNotification('没有可执行的分类文件');
+        return;
+      }
+
+      const btn = document.querySelector('#classifyBtn');
+      btn.textContent = '正在执行分类...';
+      btn.disabled = true;
+
+      try {
+        // 获取扫描目录作为基础路径
+        const basePath = selectedDirectory || scannedFiles[0]?.path;
+        if (!basePath) {
+          throw new Error('无法确定目标目录');
+        }
+        const targetBasePath = basePath;
+
+        // 按建议文件夹分组
+        const folderGroups = {};
+        files.forEach(f => {
+          const folder = f.suggestedFolder || f.category || '未分类';
+          if (!folderGroups[folder]) {
+            folderGroups[folder] = [];
+          }
+          folderGroups[folder].push(f);
+        });
+
+        let movedCount = 0;
+        let errorCount = 0;
+
+        // 为每个分组创建文件夹并移动文件
+        for (const [folderName, folderFiles] of Object.entries(folderGroups)) {
+          try {
+            // 创建文件夹
+            const folderPath = await ipcRenderer.invoke('create-folder', targetBasePath, folderName);
+
+            // 移动文件
+            for (const file of folderFiles) {
+              try {
+                if (!file.path) continue;
+
+                const destPath = path.join(folderPath, file.name);
+                const result = await ipcRenderer.invoke('move-file', file.path, destPath);
+
+                if (result.success) {
+                  movedCount++;
+                } else {
+                  console.error(`移动文件失败: ${file.path}`, result.error);
+                  errorCount++;
+                }
+              } catch (err) {
+                console.error(`移动文件出错: ${file.path}`, err);
+                errorCount++;
+              }
+            }
+          } catch (err) {
+            console.error(`创建文件夹失败: ${folderName}`, err);
+            errorCount += folderFiles.length;
+          }
+        }
+
+        if (errorCount === 0) {
+          showNotification(`✅ 分类执行完成！成功移动 ${movedCount} 个文件`);
+        } else {
+          showNotification(`⚠️ 分类执行完成：成功 ${movedCount} 个，失败 ${errorCount} 个`);
+        }
+
+        // 清空分类结果
+        window.lastClassifiedFiles = null;
+        document.getElementById('classList').innerHTML = '<p style="color: #999; text-align: center;">分类已执行完成</p>';
+
+      } catch (err) {
+        showNotification('执行分类失败：' + err.message);
+        console.error('[执行分类] 错误:', err);
+      } finally {
+        btn.textContent = '开始智能分类';
+        btn.disabled = false;
+      }
+    }
+
+    // 取消分类
+    function cancelClassification() {
+      window.lastClassifiedFiles = null;
+      document.getElementById('classList').innerHTML = '<p style="color: #999; text-align: center;">已取消分类操作</p>';
+      showNotification('已取消分类');
     }
 
     // 显示文件列表
