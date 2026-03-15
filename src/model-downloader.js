@@ -48,7 +48,7 @@ const MODEL_CONFIGS = {
     id: 'EMBEDDING',
     name: 'bge-micro-v2.onnx',
     description: '文档语义向量化模型',
-    size: 22 * 1024 * 1024, // 22MB
+    size: 65.84 * 1024 * 1024, // 65.84 MB
     dimensions: 384,
     downloadInstructions: '自动下载或手动下载',
     // SHA256 校验和（下载后计算并更新）
@@ -85,7 +85,7 @@ const MODEL_CONFIGS = {
     id: 'CLIP',
     name: 'clip-vit-b-32.onnx',
     description: '图片跨模态理解模型',
-    size: 578 * 1024 * 1024, // 578MB
+    size: 577.54 * 1024 * 1024, // 577.54 MB
     dimensions: 512,
     downloadInstructions: '自动下载或手动下载',
     sha256: null,
@@ -121,7 +121,7 @@ const MODEL_CONFIGS = {
     id: 'LLM',
     name: 'qwen2.5-1.5b-instruct-q4_k_m.gguf',
     description: '小型语言模型（INT4 量化）',
-    size: 986 * 1024 * 1024, // 986MB (实际文件大小)
+    size: 940.37 * 1024 * 1024, // 940.37 MB (实际文件大小)
     params: '1.5B',
     quantization: 'INT4',
     downloadInstructions: '自动下载或手动下载',

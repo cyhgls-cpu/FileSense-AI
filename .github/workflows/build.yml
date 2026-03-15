@@ -28,6 +28,9 @@ jobs:
           ELECTRON_GET_USE_PROXY: true
           GLOBAL_AGENT_HTTPS_PROXY: ${{ secrets.HTTPS_PROXY }}
 
+      - name: Rebuild native modules
+        run: npx electron-rebuild -f -w better-sqlite3
+
       - name: Build Windows
         run: |
           npx electron-builder install-app-deps

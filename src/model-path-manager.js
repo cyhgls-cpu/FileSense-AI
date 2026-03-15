@@ -12,7 +12,7 @@ const { app } = require('electron');
 
 class ModelPathManager {
   constructor() {
-    this.appName = 'SmartFileOrganizer';
+    this.appName = 'filesense-ai';
     this.modelsDirName = 'models';
     this.tempDirName = 'temp';
     this.cacheDirName = 'cache';

@@ -4,8 +4,12 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // 禁用 GPU 加速（解决某些 Windows 系统上的崩溃问题）
-app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-software-rasterizer');
+// 注意：在 Windows 便携版中，GPU 禁用可能导致白屏问题
+// 仅在需要时启用
+if (process.argv.includes('--disable-gpu')) {
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+}
 
 // 全局错误处理
 process.on('uncaughtException', (err) => {
@@ -105,6 +109,7 @@ function createWindow() {
     maximizable: true,     // 允许最大化
     minimizable: true,     // 允许最小化
     title: 'FileSense AI (灵析)',
+    show: false,           // 初始不显示，等加载完成后再显示
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -122,9 +127,14 @@ function createWindow() {
   mainWindow.setMenu(null);
 
   // 窗口加载完成后调整大小以适应内容
-  mainWindow.loadFile('index.html').then(() => {
-    // 可选：根据内容调整窗口大小
-    // mainWindow.setContentSize(windowWidth, windowHeight);
+  // index.html 在根目录，而 main.js 在 src/ 目录
+  const indexPath = path.join(__dirname, '..', 'index.html');
+  console.log('[窗口] 加载 HTML:', indexPath);
+  mainWindow.loadFile(indexPath).then(() => {
+    console.log('[窗口] HTML 加载完成');
+  }).catch(err => {
+    console.error('[窗口] HTML 加载失败:', err);
+    dialog.showErrorBox('启动错误', `无法加载应用界面: ${err.message}`);
   });
 
   // 开发模式下打开开发者工具
@@ -132,9 +142,21 @@ function createWindow() {
 
   // 窗口加载完成后显示
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    console.log('[窗口] 窗口已显示');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+      console.log('[窗口] 窗口已显示');
+    }
   });
+
+  // 备用：如果 ready-to-show 没有触发，5秒后强制显示
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      console.log('[窗口] 强制显示窗口（ready-to-show 未触发）');
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }, 3000);
 
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();
@@ -1059,7 +1081,7 @@ ipcMain.handle('open-models-folder', async () => {
 // 显示下载帮助窗口
 ipcMain.handle('show-download-help', async () => {
   const { BrowserWindow } = require('electron');
-  
+
   const helpWindow = new BrowserWindow({
     width: 1000,
     height: 800,
@@ -1067,15 +1089,19 @@ ipcMain.handle('show-download-help', async () => {
     title: '模型下载帮助',
     parent: mainWindow,
     modal: false,
+    autoHideMenuBar: true,  // 自动隐藏菜单栏
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     }
   });
-  
+
+  // 完全移除菜单栏
+  helpWindow.setMenu(null);
+
   // 加载帮助页面
   helpWindow.loadFile(path.join(__dirname, 'download-help.html'));
-  
+
   // 开发模式下打开 DevTools
   if (process.argv.includes('--dev')) {
     helpWindow.webContents.openDevTools();
